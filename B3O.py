@@ -277,7 +277,7 @@ async def on_message(message):
 
 
  #Puts picks into pool and removes the pick from the pack
-    if (message.content.lower()) in FullList:
+    if (message.content.lower()) in packs[players.index(message.author)]: #Changed from earlier versions so people can only pick from their pack
 
         i = 0
         for booster in packs:
@@ -290,7 +290,7 @@ async def on_message(message):
 
             #Automatically passing the pack
         length = len(packs[0])
-        if all (len(y)==length for y in packs): #This condition currently works (tested with 2 players)
+        if all (len(y)==length for y in packs): #Works (tested with 2 and 3 players)
             packs = packs[1:] + packs[:1]
             for word in players:
                 await word.send(['Your next pack contains', packs[players.index(word)]])
