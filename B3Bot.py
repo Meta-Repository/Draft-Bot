@@ -1,11 +1,19 @@
 import discord
 import random
 import asyncio
+import sys
+import json
+import os
+import os.path
+from os import path
 #import threading
 
 BotToken = "NzA2NjUzMzEyMDc3NzkxMzIz.Xq9sSw.ZjK0g-p8xt6GfgJTXEq8cQhF9nc"
 GuildName = "fspluver's server"
 GuildID = 706652047042412565
+
+if(path.exists("list.cub")):
+    print('yo')
 
 TrapList = [
     'Acid Trap Hole',

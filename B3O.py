@@ -2,6 +2,12 @@
 import discord
 import random
 import asyncio
+import sys
+import json
+import os
+import os.path
+from os import path
+
 BotToken = "NzA3MzI0NjAxNDQ4NzkyMDY0.XrHJbw.mwn0yBiFMXRTBs2W93ePyWwcW64"
 GuildName = "fspluver's server"
 GuildID = 706652047042412565
@@ -26,163 +32,195 @@ async def on_ready():
     members = '\n - '.join([member.name for member in guild.members])
     print(f'Guild Members:\n - {members}')
 
-CardList = [
-    'acid trap hole',
-    'bad aim',
-    'ballista squad',
-    'burst rebirth',
-    'bottomless trap hole',
-    'call of the haunted',
-    'ceasefire',
-    'compulsory evacuation device',
-    'counter gate',
-    'dark bribe',
-    'dimension slice',
-    'dimensional prison',
-    'divine wrath',
-    'dust tornado',
-    'fiendish chain',
-    'icarus attack',
-    'karma cut',
-    'legacy of yata-garasu',
-    'liberty at last!',
-    'macro cosmos',
-    'magic cylinder',
-    'magic drain',
-    'malevolent catastrophe',
-    'metal reflect slime',
-    'metalmorph',
-    'mirror force',
-    'needle ceiling',
-    'oasis of dragon souls',
-    'ordeal of a traveler',
-    'peaceful burial',
-    'raigeki break',
-    'recall',
-    'reckless greed1',
-    'reckless greed2',
-    'reckless greed3',
-    'return from the different dimension',
-    'ring of destruction',
-    'royal decree',
-    'scrap-iron scarecrow',
-    'sakuretsu armor',
-    'seven tools of the bandit',
-    'shadow spell',
-    'skill drain',
-    'skull lair',
-    'solemn judgment',
-    'solemn strike',
-    'solemn warning',
-    'starlight road',
-    'storming mirror force',
-    'stronghold the moving fortress',
-    'the forceful checkpoint',
-    'tiki curse',
-    'time seal',
-    'torrential tribute',
-    'trap dustshoot',
-    'trap hole',
-    'trap stun',
-    'ultimate offering',
-    'vanitys emptyness',
-    'waboku',
-    'wall of revealing light',
-    'widespread dud',
-    'widespread ruin',
-    'wiretap',
-    'a feather of the phoenix', #Spells starting here
-    'allure of darkness',
-    'autonomous action unit',
-    'axe of despair',
-    'axe of fools',
-    'back to square one',
-    'bait doll',
-    'book of eclipse',
-    'book of moon',
-    'book of taiyou',
-    'brain control',
-    'burden of the mighty',
-    'butterfly dagger elma',
-    'card destruction',
-    'card trader',
-    'change of heart',
-    'charge of the light brigade',
-    'chicken game',
-    'cold wave',
-    'creature swap',
-    'dark core',
-    'dark hole',
-    'dark snake syndrome',
-    'dark world dealings',
-    'dark world lightning',
-    'darkworld shackles',
-    'dicephoon',
-    'double summon',
-    'dragged down into the grave',
-    'ectoplasmer',
-    'enemy controller',
-    'exchange',
-    'fissure',
-    'foolish burial',
-    'forbidden chalice',
-    'forbidden lance',
-    'giant trunade',
-    'gold sarcophagus',
-    'graceful charity',
-    'heavy storm',
-    'into the void',
-    'kaiser colosseum',
-    'last will',
-    'level limit area b',
-    'lightning vortex',
-    'mage power',
-    'magical mallet',
-    'magical stone excavation',
-    'march of the monarchs',
-    'megamorph',
-    'messenger of peace',
-    'mind control',
-    'monster gate',
-    'monster reborn',
-    'my body as a shield',
-    'mystical space typhoon',
-    'nightmares steelcage',
-    'nobleman of crossout',
-    'offerings to the doomed',
-    'one for one',
-    'painful choice',
-    'pianissimo',
-    'pot of avarice',
-    'pot of dichotomy',
-    'pot of duality',
-    'pot of greed',
-    'premature burial',
-    'prevention star',
-    'reasoning',
-    'reinforcement of the army',
-    'riryoku',
-    'scapegoat',
-    'shard of greed',
-    'shield crush',
-    'shooting star bow ceal',
-    'shrink',
-    'smashing ground',
-    'snatch steal',
-    'soul exchange',
-    'soul taker',
-    'star blast',
-    'stray lambs',
-    'swords of concealing light',
-    'swords of revealing light',
-    'the dark door',
-    'the shallow grave',
-    'tribute to the doomed',
-    'twister',
-    'upstart goblin',
-    'dimension fusion', #Monsters after here
+# not a fan of Python classes, but this is the implemetation I'm doing to allow for a list of just strings as well (for now)
+class CardInfo:
+    #Left all but name as optional so that we can fall back if that's all we have. Definitely could have more properties in this class, just wanted a good starting point.
+    def __init__(self, name, id = -1, cardType="", description = "", imageUrl = ""):
+        self.name = name
+        self.id = id
+        self.type = cardType
+        self.description = description
+        self.imageUrl = imageUrl
+    #We're just displaying names for now, but that can change. What these mean is that if you print a list of these, only their names will show.
+    def __repr__(self):
+        return self.name
+    def __str__(self):
+        self.name
 
-    ]
+
+CardList = []
+
+#import code. Short and sweet.
+if (path.exists('list.cub')):
+    print('Cube list discovered. Importing.')
+    with(open("list.cub", 'r')) as cubeFile:
+        #Python makes some things so so easy
+        cardDict = json.load(cubeFile)
+        #Instantiate a new CardInfo object for each card in the list. Definitely could pull in more info from the JSON - there's a lot there.
+        for card in cardDict:
+            CardList.append(CardInfo(card['name'], card['id'], card['type'], card['desc'], card['card_images'][0]['image_url']))
+
+else:
+    print('Did not find cube list. Falling back to default list.')
+    CardNames = [
+        'acid trap hole',
+        'bad aim',
+        'ballista squad',
+        'burst rebirth',
+        'bottomless trap hole',
+        'call of the haunted',
+        'ceasefire',
+        'compulsory evacuation device',
+        'counter gate',
+        'dark bribe',
+        'dimension slice',
+        'dimensional prison',
+        'divine wrath',
+        'dust tornado',
+        'fiendish chain',
+        'icarus attack',
+        'karma cut',
+        'legacy of yata-garasu',
+        'liberty at last!',
+        'macro cosmos',
+        'magic cylinder',
+        'magic drain',
+        'malevolent catastrophe',
+        'metal reflect slime',
+        'metalmorph',
+        'mirror force',
+        'needle ceiling',
+        'oasis of dragon souls',
+        'ordeal of a traveler',
+        'peaceful burial',
+        'raigeki break',
+        'recall',
+        'reckless greed1',
+        'reckless greed2',
+        'reckless greed3',
+        'return from the different dimension',
+        'ring of destruction',
+        'royal decree',
+        'scrap-iron scarecrow',
+        'sakuretsu armor',
+        'seven tools of the bandit',
+        'shadow spell',
+        'skill drain',
+        'skull lair',
+        'solemn judgment',
+        'solemn strike',
+        'solemn warning',
+        'starlight road',
+        'storming mirror force',
+        'stronghold the moving fortress',
+        'the forceful checkpoint',
+        'tiki curse',
+        'time seal',
+        'torrential tribute',
+        'trap dustshoot',
+        'trap hole',
+        'trap stun',
+        'ultimate offering',
+        'vanitys emptyness',
+        'waboku',
+        'wall of revealing light',
+        'widespread dud',
+        'widespread ruin',
+        'wiretap',
+        'a feather of the phoenix', #Spells starting here
+        'allure of darkness',
+        'autonomous action unit',
+        'axe of despair',
+        'axe of fools',
+        'back to square one',
+        'bait doll',
+        'book of eclipse',
+        'book of moon',
+        'book of taiyou',
+        'brain control',
+        'burden of the mighty',
+        'butterfly dagger elma',
+        'card destruction',
+        'card trader',
+        'change of heart',
+        'charge of the light brigade',
+        'chicken game',
+        'cold wave',
+        'creature swap',
+        'dark core',
+        'dark hole',
+        'dark snake syndrome',
+        'dark world dealings',
+        'dark world lightning',
+        'darkworld shackles',
+        'dicephoon',
+        'double summon',
+        'dragged down into the grave',
+        'ectoplasmer',
+        'enemy controller',
+        'exchange',
+        'fissure',
+        'foolish burial',
+        'forbidden chalice',
+        'forbidden lance',
+        'giant trunade',
+        'gold sarcophagus',
+        'graceful charity',
+        'heavy storm',
+        'into the void',
+        'kaiser colosseum',
+        'last will',
+        'level limit area b',
+        'lightning vortex',
+        'mage power',
+        'magical mallet',
+        'magical stone excavation',
+        'march of the monarchs',
+        'megamorph',
+        'messenger of peace',
+        'mind control',
+        'monster gate',
+        'monster reborn',
+        'my body as a shield',
+        'mystical space typhoon',
+        'nightmares steelcage',
+        'nobleman of crossout',
+        'offerings to the doomed',
+        'one for one',
+        'painful choice',
+        'pianissimo',
+        'pot of avarice',
+        'pot of dichotomy',
+        'pot of duality',
+        'pot of greed',
+        'premature burial',
+        'prevention star',
+        'reasoning',
+        'reinforcement of the army',
+        'riryoku',
+        'scapegoat',
+        'shard of greed',
+        'shield crush',
+        'shooting star bow ceal',
+        'shrink',
+        'smashing ground',
+        'snatch steal',
+        'soul exchange',
+        'soul taker',
+        'star blast',
+        'stray lambs',
+        'swords of concealing light',
+        'swords of revealing light',
+        'the dark door',
+        'the shallow grave',
+        'tribute to the doomed',
+        'twister',
+        'upstart goblin',
+        'dimension fusion', #Monsters after here
+        ]
+
+    for cardName in CardNames:
+        CardList.append(CardInfo(cardName))
 
 pools = []
 pool = []
@@ -218,7 +256,9 @@ SlurRej = [
     'Slurs are not allowed here. Your message will be reviewed by an admin. https://media.giphy.com/media/Vh2c84FAPVyvvjZJNM/giphy.gif'
 ]
 
+#is this ever used again?
 PackOTraps = random.sample(CardList, 15)
+
 #Responds in chat to messages. 
 @client.event
 async def on_message(message):
@@ -250,10 +290,11 @@ async def on_message(message):
 
     #Message is someone tries to sign up twice
     if ('!joindraft') in message.content.lower() and message.author in players:
-        await message.channel.send('Its not possible! Noone has the power to be in two draft seats at once!')
+        await message.channel.send('It\'s not possible! No one has the power to be in two draft seats at once!')
     #Registers the player
     if (('!joindraft') in message.content.lower() and packs == []) and (message.author not in players):
-        await message.channel.send('You have joined the draft!')
+        #made it announce name - we might want to look into always sending this to the main server even if draft is joined in PM
+        await message.channel.send(message.author.name + ' has joined the draft!')
         players.append(message.author)
         playernames.append(message.author.name)
     #Sends the name of all registered players. Commented out has all the person's info (e.g. Discord ID)    
@@ -273,36 +314,50 @@ async def on_message(message):
             pack = FullList[i:i+14]
             packs.append(pack) #Holds the packs
             i = i+15
+            await word.send("Here's your first pack! Use !pick _cardname_ to select a card. Happy drafting!")
             await word.send(pack)
 
 
  #Puts picks into pool and removes the pick from the pack
-    if (message.content.lower()) in packs[players.index(message.author)]: #Changed from earlier versions so people can only pick from their pack
+    if message.content.lower().strip().startswith('!pick'):
 
-        i = 0
-        for booster in packs:
-            if (message.content.lower()) in packs[i]:
-                packs[i].remove(message.content.lower())
-                pool.append([message.author.name, message.content.lower()]) #
-                await message.author.send('---------------Nice pick! It has been added to your pool.--------------- Type !mypool to view your entire cardpool')
-                print(booster)
-            i = i+1
+        #card name, all lower, without trailing or leading spaces
+        pickText = message.content.lower().replace('!pick', '').strip()
+
+        #this is my pack, there are many like it, but this one is mine
+        workingPack = packs[players.index(message.author)]
+
+        #index of the card in the pack, if it's -1 after we verify it ain't in there
+        cardIndex = -1
+        try: #this language's iteration syntax confuses me greatly
+            cardIndex = next(i for i, c in enumerate(workingPack) if pickText in c.name.lower())
+        except:
+            cardIndex = -1
+
+        if cardIndex != -1: #Changed from earlier versions so people can only pick from their pack            
+            pool.append([message.author.name, workingPack[cardIndex]]) #add card to pool
+            workingPack.remove(workingPack[cardIndex]) #remove card from pack
+            await message.author.send('---------------Nice pick! It has been added to your pool.---------------')
+            await message.author.send('Type !mypool to view your entire cardpool')            
 
             #Automatically passing the pack
-        length = len(packs[0])
-        if all (len(y)==length for y in packs): #Works (tested with 2 and 3 players)
-            packs = packs[1:] + packs[:1]
-            for word in players:
-                await word.send(['Your next pack contains', packs[players.index(word)]])
-            if len(packs[0]) == 0:
-                packs = []
-                   
+            length = len(packs[0])
+            if all (len(y)==length for y in packs): #Works (tested with 2 and 3 players)
+                packs = packs[1:] + packs[:1]
+                for word in players:
+                    await word.send('Your next pack contains:')
+                    await word.send(packs[players.index(word)])
+                if len(packs[0]) == 0:
+                    packs = []
+
+        else:
+            await message.author.send("Sorry! That card doesn't look like it's in this pack. Try again.") #Git gud, learn how 2 read   
 
     if ('!mypool' in message.content.lower()):
         temppool = []
         for word in pool:
             if message.author.name in word:
-                temppool.append(word[1])
+                temppool.append(word[1].name + " : " + word[1].imageUrl) #could send any combination of card properties in any sort of format
         await message.author.send(temppool)
 
     if ('!draftdone') in message.content.lower():
