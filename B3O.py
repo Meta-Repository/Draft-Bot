@@ -347,7 +347,7 @@ async def on_message(message):
             if all (len(y)==length for y in packs): #Works (tested with 2 and 3 players)
                 packs = packs[1:] + packs[:1]
                 for word in players:
-                    await word.send(file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg"))
+                    await word.send(file=discord.File(fp=imagemanipulator.create_pack_image(packs[players.index(word)]),filename="image.jpg"))
                     await word.send('Your next pack contains:')
                     await word.send(packs[players.index(word)])
                 if len(packs[0]) == 0:
