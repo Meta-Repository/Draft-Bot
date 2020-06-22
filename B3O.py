@@ -7,6 +7,7 @@ import json
 import os
 import os.path
 from os import path
+import imagemanipulator
 
 BotToken = "NzA3MzI0NjAxNDQ4NzkyMDY0.XrHJbw.mwn0yBiFMXRTBs2W93ePyWwcW64"
 GuildName = "fspluver's server"
@@ -314,6 +315,7 @@ async def on_message(message):
             pack = FullList[i:i+14]
             packs.append(pack) #Holds the packs
             i = i+15
+            await word.send(file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg"))
             await word.send("Here's your first pack! Use !pick _cardname_ to select a card. Happy drafting!")
             await word.send(pack)
 
@@ -345,6 +347,7 @@ async def on_message(message):
             if all (len(y)==length for y in packs): #Works (tested with 2 and 3 players)
                 packs = packs[1:] + packs[:1]
                 for word in players:
+                    await word.send(file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg"))
                     await word.send('Your next pack contains:')
                     await word.send(packs[players.index(word)])
                 if len(packs[0]) == 0:
