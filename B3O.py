@@ -39,7 +39,7 @@ class CardInfo:
     def __init__(self, name, id = -1, cardType="", description = "", imageUrl = ""):
         self.name = name
         self.id = id
-        self.type = cardType
+        self.cardType = cardType
         self.description = description
         self.imageUrl = imageUrl
     #We're just displaying names for now, but that can change. What these mean is that if you print a list of these, only their names will show.
@@ -362,6 +362,42 @@ async def on_message(message):
             if message.author.name in word:
                 temppool.append(word[1].name + " : " + word[1].imageUrl) #could send any combination of card properties in any sort of format
         await message.author.send(temppool)
+        
+
+    if ('!ydkmypool' in message.content.lower()):
+        tempidpoolnoextra = []
+        tempidpoolextra = []
+        tempidpoolside = []
+        r = 0
+        for word in pool:
+            if (word[1].cardType != "Synchro Monster") and word[1].cardType != "XYZ Monster":                
+                if message.author.name in word:
+                    tempidpoolnoextra.append(word[1].id) #puts the ids of the main deck cards in a list
+            if ((word[1].cardType == "Synchro Monster") or (word[1].cardType == "XYZ Monster")) and (r < 14):
+                if message.author.name in word:
+                    tempidpoolextra.append(word[1].id) #puts the ids of the extra deck cards in a list
+                    r = r + 1
+            if ((word[1].cardType == "Synchro Monster") or (word[1].cardType == "XYZ Monster")) and (r > 13):
+                if message.author.name in word:
+                    tempidpoolside.append(word[1].id) #puts the ids of the extra deck cards in an overflow side list
+
+        await message.author.send(tempidpoolnoextra + tempidpoolextra) 
+        with open('listfile.ydk', 'w') as filehandle:
+            ydkstuff = ["#created by ...", "#main"]
+            for listitem in ydkstuff: #puts in the necessary ydk stuff
+                filehandle.write('%s\n' % listitem)
+            for listitem in tempidpoolnoextra:
+                filehandle.write('%s\n' % listitem) #should put main deck cards in the ydk file
+            ydkextraline = ["#extra"]
+            for listitem in ydkextraline: #Stuff after this gets put in the extra deck (until side)
+                filehandle.write('%s\n' % listitem)
+            for listitem in tempidpoolextra:
+                filehandle.write('%s\n' % listitem)
+            ydksidestuff = ["!side"] #Stuff after this gets put in the side
+            for listitem in ydksidestuff:
+                filehandle.write('%s\n' % listitem)           
+            for listitem in tempidpoolside:
+                filehandle.write('%s\n' % listitem)
 
     if ('!draftdone') in message.content.lower():
         await message.players.send('The draft has concluded! Type "!mypool" to see your cardpool! Good luck in your duels!')
