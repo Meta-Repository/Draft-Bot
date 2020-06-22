@@ -32,12 +32,12 @@ def get_small_image_url(cardId):
     return [card for card in cubeJson if card["id"] == cardId][0]["card_images"][0]["image_url_small"]
 
 def get_image(cardId):
-    result = cursor.execute('SELECT image FROM images WHERE id = ?', [cardId]).fetchone()[0]
+    result = cursor.execute('SELECT image FROM images WHERE id = ?', [cardId]).fetchone()
     if result is None:
         cache_card_images(cardId)
         return get_image(cardId)
     else:
-        return result
+        return result[0]
 
 def get_small_image(cardId):
     result = cursor.execute('SELECT image_small FROM images WHERE id = ?', [cardId]).fetchone()
