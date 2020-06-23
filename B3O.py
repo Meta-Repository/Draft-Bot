@@ -8,6 +8,7 @@ import os
 import os.path
 from os import path
 import imagemanipulator
+from io import StringIO
 
 BotToken = "NzA3MzI0NjAxNDQ4NzkyMDY0.XrHJbw.mwn0yBiFMXRTBs2W93ePyWwcW64"
 GuildName = "fspluver's server"
@@ -29,9 +30,6 @@ async def on_ready():
         f'{guild.name}(id: {guild.id})'
     )
 
-    #Listing people in the server
-    members = '\n - '.join([member.name for member in guild.members])
-    print(f'Guild Members:\n - {members}')
 
 # not a fan of Python classes, but this is the implemetation I'm doing to allow for a list of just strings as well (for now)
 class CardInfo:
@@ -317,9 +315,7 @@ async def on_message(message):
             pack = FullList[i:i+15]
             packs.append(pack) #Holds the packs
             i = i+15
-            await word.send(file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg"))
-            await word.send("Here's your first pack! Use !pick _cardname_ to select a card. Happy drafting!")
-            await word.send(pack)
+            await word.send(content="Here's your first pack! Use !pick _cardname_ to select a card. Happy drafting!\n"+str(pack), file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg"))
 
 
  #Puts picks into pool and removes the pick from the pack
@@ -332,12 +328,6 @@ async def on_message(message):
         workingPack = packs[players.index(message.author)]
 
         poolCount = len([card for card in pool if message.author.name in card])
-
-        print(poolCount)
-
-        print(pickNumber)
-
-        print(poolCount % 15)
         
         if(poolCount % 15 > pickNumber):
             await message.author.send("I know they're all good cards, but one per pack, please. Maybe get a snack or something while you wait.") #we don't like cheaters
@@ -354,17 +344,14 @@ async def on_message(message):
         if cardIndex != -1: #Changed from earlier versions so people can only pick from their pack            
             pool.append([message.author.name, workingPack[cardIndex]]) #add card to pool
             workingPack.remove(workingPack[cardIndex]) #remove card from pack
-            await message.author.send('---------------Nice pick! It has been added to your pool.---------------')
-            await message.author.send('Type !mypool to view your entire cardpool')            
+            await message.author.send('---------------Nice pick! It has been added to your pool.---------------\nType !mypool to view your entire cardpool.')      
 
             #Automatically passing the pack
             length = len(packs[0])
             if all (len(y)==length for y in packs): #Works (tested with 2 and 3 players)
                 packs = packs[1:] + packs[:1]
                 for word in players:
-                    await word.send(file=discord.File(fp=imagemanipulator.create_pack_image(packs[players.index(word)]),filename="image.jpg"))
-                    await word.send('Your next pack contains:')
-                    await word.send(packs[players.index(word)])
+                    await word.send(content='Your next pack contains:\n'+str(packs[players.index(word)]), file=discord.File(fp=imagemanipulator.create_pack_image(packs[players.index(word)]), filename="image.jpg"))
                 if len(packs[0]) == 0:
                     packs = []
                     pickNumber = 0
@@ -382,7 +369,7 @@ async def on_message(message):
         await message.author.send(temppool)
         
 
-    if ('!ydkmypool' in message.content.lower()):
+    if ('!ydk' in message.content.lower()):
         tempidpoolnoextra = []
         tempidpoolextra = []
         tempidpoolside = []
@@ -399,23 +386,23 @@ async def on_message(message):
                 if message.author.name in word:
                     tempidpoolside.append(word[1].id) #puts the ids of the extra deck cards in an overflow side list
 
-        await message.author.send(tempidpoolnoextra + tempidpoolextra) 
-        with open('listfile.ydk', 'w') as filehandle:
-            ydkstuff = ["#created by ...", "#main"]
-            for listitem in ydkstuff: #puts in the necessary ydk stuff
-                filehandle.write('%s\n' % listitem)
-            for listitem in tempidpoolnoextra:
-                filehandle.write('%s\n' % listitem) #should put main deck cards in the ydk file
-            ydkextraline = ["#extra"]
-            for listitem in ydkextraline: #Stuff after this gets put in the extra deck (until side)
-                filehandle.write('%s\n' % listitem)
-            for listitem in tempidpoolextra:
-                filehandle.write('%s\n' % listitem)
-            ydksidestuff = ["!side"] #Stuff after this gets put in the side
-            for listitem in ydksidestuff:
-                filehandle.write('%s\n' % listitem)           
-            for listitem in tempidpoolside:
-                filehandle.write('%s\n' % listitem)
+        ydkString = ""
+        ydkstuff = ["#created by ...", "#main"]
+        for listitem in ydkstuff: #puts in the necessary ydk stuff
+            ydkString+='%s\n' % listitem
+        for listitem in tempidpoolnoextra:
+            ydkString+=('%s\n' % listitem) #should put main deck cards in the ydk file
+        ydkextraline = ["#extra"]
+        for listitem in ydkextraline: #Stuff after this gets put in the extra deck (until side)
+            ydkString+='%s\n' % listitem
+        for listitem in tempidpoolextra:
+            ydkString+='%s\n' % listitem
+        ydksidestuff = ["!side"] #Stuff after this gets put in the side
+        for listitem in ydksidestuff:
+            ydkString+='%s\n' % listitem           
+        for listitem in tempidpoolside:
+            ydkString+='%s\n' % listitem
+        await message.author.send(file=discord.File(fp=StringIO(ydkString),filename="YourDraftPool.ydk"))
 
     if ('!draftdone') in message.content.lower():
         await message.players.send('The draft has concluded! Type "!mypool" to see your cardpool! Good luck in your duels!')

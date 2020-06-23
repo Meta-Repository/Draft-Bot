@@ -13,12 +13,14 @@ cursor = connection.cursor()
 
 #Takes a few minutes to run depending on cube size.
 def cache_all_images():
+    print('Cacheing all images...')
     for card in cubeJson:
         print(card["name"])
         cache_card_images(card["id"])
 
 #Downloads both the large and small card images and writes them as BLOBs to the database file.
 def cache_card_images(cardId):
+    print('Cacheing ' + str(cardId) + '...')
     image = urlopen(get_image_url(cardId)).read()
     smallImage = urlopen(get_small_image_url(cardId)).read()
     cursor.execute('INSERT INTO images VALUES (?, ?, ?)', [cardId, image, smallImage])

@@ -3,6 +3,7 @@ import json
 import os
 import os.path
 from os import path
+import imagemanager
 
 #takes a filepath expected to be newline delimited list of desired cards
 def read_cube_list(filepath):
@@ -60,3 +61,6 @@ if(unidentifiedCards):
     with open("missed_cards.txt", 'w') as whoops:
         for missedCard in unidentifiedCards:
             whoops.write(missedCard + '\n')
+
+#Download all card images
+imagemanager.cache_all_images()
