@@ -231,6 +231,7 @@ packs = []
 pack = []
 i = 0
 x = 0
+pickNumber = 0
 
 #Welcomes people who join the server
 @client.event
@@ -267,6 +268,7 @@ async def on_message(message):
     global CardList
     global FullList
     global w
+    global pickNumber
     w = 0
     #printprint(message.content.lower())
     if message.author == client.user:
@@ -312,7 +314,7 @@ async def on_message(message):
 
         i = 0 #For pulling cards from the full list into packs
         for word in players:
-            pack = FullList[i:i+14]
+            pack = FullList[i:i+15]
             packs.append(pack) #Holds the packs
             i = i+15
             await word.send(file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg"))
@@ -321,13 +323,26 @@ async def on_message(message):
 
 
  #Puts picks into pool and removes the pick from the pack
-    if message.content.lower().strip().startswith('!pick'):
+    if message.content.lower().strip().startswith('!pick'):     
 
         #card name, all lower, without trailing or leading spaces
         pickText = message.content.lower().replace('!pick', '').strip()
 
         #this is my pack, there are many like it, but this one is mine
         workingPack = packs[players.index(message.author)]
+
+        poolCount = len([card for card in pool if message.author.name in card])
+
+        print(poolCount)
+
+        print(pickNumber)
+
+        print(poolCount % 15)
+        
+        if(poolCount % 15 > pickNumber):
+            await message.author.send("I know they're all good cards, but one per pack, please. Maybe get a snack or something while you wait.") #we don't like cheaters
+            return   
+
 
         #index of the card in the pack, if it's -1 after we verify it ain't in there
         cardIndex = -1
@@ -352,6 +367,9 @@ async def on_message(message):
                     await word.send(packs[players.index(word)])
                 if len(packs[0]) == 0:
                     packs = []
+                    pickNumber = 0
+                else:
+                    pickNumber = pickNumber + 1
 
         else:
             await message.author.send("Sorry! That card doesn't look like it's in this pack. Try again.") #Git gud, learn how 2 read   
