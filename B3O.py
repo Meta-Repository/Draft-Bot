@@ -119,6 +119,7 @@ i = 0
 x = 0
 t = 0
 pickNumber = 0
+pooltosend = ""
 
 #Welcomes people who join the server
 @client.event
@@ -140,6 +141,7 @@ async def on_message(message):
     global w
     global pickNumber
     global t
+    global pooltosend
     w = 0
     #printprint(message.content.lower())
     if message.author == client.user:
@@ -300,6 +302,12 @@ async def on_message(message):
                 temppool.append(word[1].name)# + " : " + word[1].imageUrl) #could send any combination of card properties in any sort of format
         await message.author.send(temppool)
         
+
+    #Lists all cards in all pools and says who has each card. Could be useful for detecting cheating if necessary
+    if ('!totalpool') in message.content.lower():
+        for thing in pool:
+            pooltosend+='%s\n' % thing
+        await message.author.send(file=discord.File(fp=StringIO(pooltosend),filename="OverallPool.ydk"))
 
     if ('!ydk' in message.content.lower()):
         tempidpoolnoextra = []
