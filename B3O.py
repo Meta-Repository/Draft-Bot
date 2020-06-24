@@ -162,13 +162,18 @@ async def on_message(message):
         await message.channel.send(playernames)
         #await message.channel.send(players)
 
+    #Removes people from the draft. Does not use @. For example, !remove fspluver, not !remove @fspluver
     if message.content.lower().strip().startswith('!remove'):
-        for person in playernames:
+        y = 0
+        for person in players: #This loop removes them from the players list            
+            if person.name in message.content.lower():
+                players.remove(players[y])                      
+            y = y+1
+        for person in playernames: #This loop removes them from the playernames list
             if person in message.content.lower():
                 playernames.remove(person)
-                await message.channel.send(person + " has been removed from the draft and will be unable to join until the event has concluded.")      
+                await message.channel.send(person + " has been removed from the draft.")
  
-
     if('!react' in message.content.lower()):
         msgChannel = message.channel
         
