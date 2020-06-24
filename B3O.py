@@ -168,11 +168,11 @@ async def on_message(message):
     if message.content.lower().strip().startswith('!remove'):
         y = 0
         for person in players: #This loop removes them from the players list            
-            if person.name in message.content.lower():
+            if person.name in message.content:
                 players.remove(players[y])                      
             y = y+1
         for person in playernames: #This loop removes them from the playernames list
-            if person in message.content.lower():
+            if person in message.content:
                 playernames.remove(person)
                 await message.channel.send(person + " has been removed from the draft.")
  
