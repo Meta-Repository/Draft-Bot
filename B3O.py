@@ -159,7 +159,12 @@ async def on_message(message):
     if ('!currentplayers') in message.content.lower():
         await message.channel.send(playernames)
         #await message.channel.send(players)
- 
+
+    if message.content.lower().strip().startswith('!remove'):
+        for person in playernames:
+            if person in message.content.lower():
+                playernames.remove(person)
+                await message.channel.send(person + " has been removed from the draft and will be unable to join until the event has concluded.")      
         
  #Sends first pack to all players
     if ('!!startdraft') in message.content.lower():
