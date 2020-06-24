@@ -129,6 +129,8 @@ async def on_member_join(member):
     )
 
 
+
+
 #Responds in chat to messages. 
 @client.event
 async def on_message(message):
@@ -160,7 +162,25 @@ async def on_message(message):
         await message.channel.send(playernames)
         #await message.channel.send(players)
  
+
+    if('!react' in message.content.lower()):
+        msgChannel = message.channel
         
+        print('it hapen')
+
+        await msgChannel.send('React, I dare you.')
+
+        def vibe_check(reaction, user):
+            return user != None
+
+        try:
+            reaction, user = await client.wait_for('reaction_add', timeout=10.0, check=vibe_check)
+        except asyncio.TimeoutError:
+            await msgChannel.send('Time\'s up, coward.')
+        else:
+            await msgChannel.send(user.name + ' thinks ' + str(reaction) + ' is a cool reaction.')
+
+
  #Sends first pack to all players
     if ('!!startdraft') in message.content.lower():
         await message.channel.send('The draft is starting! All players have received their first pack. Good luck!')
