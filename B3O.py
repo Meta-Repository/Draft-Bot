@@ -103,119 +103,7 @@ else:
         'scrap-iron scarecrow',
         'sakuretsu armor',
         'seven tools of the bandit',
-        'shadow spell',
-        'skill drain',
-        'skull lair',
-        'solemn judgment',
-        'solemn strike',
-        'solemn warning',
-        'starlight road',
-        'storming mirror force',
-        'stronghold the moving fortress',
-        'the forceful checkpoint',
-        'tiki curse',
-        'time seal',
-        'torrential tribute',
-        'trap dustshoot',
-        'trap hole',
-        'trap stun',
-        'ultimate offering',
-        'vanitys emptyness',
-        'waboku',
-        'wall of revealing light',
-        'widespread dud',
-        'widespread ruin',
-        'wiretap',
-        'a feather of the phoenix', #Spells starting here
-        'allure of darkness',
-        'autonomous action unit',
-        'axe of despair',
-        'axe of fools',
-        'back to square one',
-        'bait doll',
-        'book of eclipse',
-        'book of moon',
-        'book of taiyou',
-        'brain control',
-        'burden of the mighty',
-        'butterfly dagger elma',
-        'card destruction',
-        'card trader',
-        'change of heart',
-        'charge of the light brigade',
-        'chicken game',
-        'cold wave',
-        'creature swap',
-        'dark core',
-        'dark hole',
-        'dark snake syndrome',
-        'dark world dealings',
-        'dark world lightning',
-        'darkworld shackles',
-        'dicephoon',
-        'double summon',
-        'dragged down into the grave',
-        'ectoplasmer',
-        'enemy controller',
-        'exchange',
-        'fissure',
-        'foolish burial',
-        'forbidden chalice',
-        'forbidden lance',
-        'giant trunade',
-        'gold sarcophagus',
-        'graceful charity',
-        'heavy storm',
-        'into the void',
-        'kaiser colosseum',
-        'last will',
-        'level limit area b',
-        'lightning vortex',
-        'mage power',
-        'magical mallet',
-        'magical stone excavation',
-        'march of the monarchs',
-        'megamorph',
-        'messenger of peace',
-        'mind control',
-        'monster gate',
-        'monster reborn',
-        'my body as a shield',
-        'mystical space typhoon',
-        'nightmares steelcage',
-        'nobleman of crossout',
-        'offerings to the doomed',
-        'one for one',
-        'painful choice',
-        'pianissimo',
-        'pot of avarice',
-        'pot of dichotomy',
-        'pot of duality',
-        'pot of greed',
-        'premature burial',
-        'prevention star',
-        'reasoning',
-        'reinforcement of the army',
-        'riryoku',
-        'scapegoat',
-        'shard of greed',
-        'shield crush',
-        'shooting star bow ceal',
-        'shrink',
-        'smashing ground',
-        'snatch steal',
-        'soul exchange',
-        'soul taker',
-        'star blast',
-        'stray lambs',
-        'swords of concealing light',
-        'swords of revealing light',
-        'the dark door',
-        'the shallow grave',
-        'tribute to the doomed',
-        'twister',
-        'upstart goblin',
-        'dimension fusion', #Monsters after here
+        'shadow spell'
         ]
 
     for cardName in CardNames:
@@ -229,6 +117,7 @@ packs = []
 pack = []
 i = 0
 x = 0
+t = 0
 pickNumber = 0
 
 #Welcomes people who join the server
@@ -238,26 +127,7 @@ async def on_member_join(member):
     await member.dm_channel.send(
         f'Hi {member.name}, welcome to my Discord server!'
     )
-#Profanity
-#Responses profanity
-ProfanityRejFuck = [
-    'Hey! Keep the profanity to a minimum, fucking asshole',
-    'Please refrain from using the fuck-word in the chat',
-    'Profanity violates the rules of the server. Are you fucking illiterate?',
-    'https://media.giphy.com/media/GBIzZdF3AxZ6/giphy.gif'
-]
-ProfanityRejShit = [
-    'Listen here you little shit, profanity violates the rules of the server',
-    'Think you are hot shit? I will ban your ass if you continue with the language',
-    'Shit. /SHit/. Noun: A person or object of little value. For example, people who do not read and follow the rules of the server are shits.'
-]
 
-SlurRej = [
-    'Slurs are not allowed here. Your message will be reviewed by an admin. https://media.giphy.com/media/Vh2c84FAPVyvvjZJNM/giphy.gif'
-]
-
-#is this ever used again?
-PackOTraps = random.sample(CardList, 15)
 
 #Responds in chat to messages. 
 @client.event
@@ -267,25 +137,12 @@ async def on_message(message):
     global FullList
     global w
     global pickNumber
+    global t
     w = 0
     #printprint(message.content.lower())
     if message.author == client.user:
         return
-#Profanity and slurs
-    if ('fuck') in message.content.lower():
-        await message.channel.send(random.choice(ProfanityRejFuck))
-    if ('shit') in message.content.lower():
-        await message.channel.send(random.choice(ProfanityRejShit))
-    if ('faggot') in message.content.lower():
-        await message.channel.send(SlurRej)
-    if ('nigger') in message.content.lower():
-        await message.channel.send(SlurRej)
-    if ('fag') in message.content.lower():
-        await message.channel.send(SlurRej)
-    if ('nigga') in message.content.lower():
-        await message.channel.send(SlurRej)
  
-#Draft bot mostly starts here. Previous is just declaring variables and the card list
 
  #Players - Sign up and check current players
 
@@ -348,24 +205,68 @@ async def on_message(message):
 
             #Automatically passing the pack
             length = len(packs[0])
-            if all (len(y)==length for y in packs): #Works (tested with 2 and 3 players)
-                packs = packs[1:] + packs[:1]
-                for word in players:
-                    await word.send(content='Your next pack contains:\n'+str(packs[players.index(word)]), file=discord.File(fp=imagemanipulator.create_pack_image(packs[players.index(word)]), filename="image.jpg"))
-                if len(packs[0]) == 0:
-                    packs = []
-                    pickNumber = 0
-                else:
-                    pickNumber = pickNumber + 1
+            if t == (1 or 3): #doubling the below code. If pack 1 or 3 is it passes one way. If not it passes the other way
+                if all (len(y)==length for y in packs):
+                    packs = packs[1:] + packs[:1] #Play with this to make packs pass reverse. I think can just add - before the 1s
+                    for word in players:
+                        await word.send(content='Your next pack contains:\n'+str(packs[players.index(word)]), file=discord.File(fp=imagemanipulator.create_pack_image(packs[players.index(word)]), filename="image.jpg"))
+                    if len(packs[0]) == 0:
+                        packs = []
+                        pickNumber = 0
+                        t = t+1
+                        if t < 4:
+                            await message.channel.send('Here is your next pack! It may take a few seconds to load. Good luck!')
+                            FullList = random.sample(CardList, len(players)*15)
+                            CardList = [q for q in CardList if q not in FullList] #Removes the cards from the full card list
+
+                            i = 0 #For pulling cards from the full list into packs
+                            for word in players:
+                                pack = FullList[i:i+15]
+                                packs.append(pack) #Holds the packs
+                                i = i+15
+                                await word.send(content="Use !pick _cardname_ to select a card. Happy drafting!\n"+str(pack), file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg"))
+
+
+                    else:
+                        pickNumber = pickNumber + 1
+
+            else:
+                if all (len(y)==length for y in packs): #Works (tested with 2 and 3 players)
+                    packs = packs[-1:] + packs[:-1] #Play with this to make packs pass reverse. I think can just add - before the 1s
+                    for word in players:
+                        await word.send(content='Your next pack contains:\n'+str(packs[players.index(word)]), file=discord.File(fp=imagemanipulator.create_pack_image(packs[players.index(word)]), filename="image.jpg"))
+                    if len(packs[0]) == 0:
+                        packs = []
+                        pickNumber = 0
+                        t = t+1
+                        if t < 4:
+                            await message.channel.send('Here is your next pack! It may take a few seconds to load. Good luck!')
+                            FullList = random.sample(CardList, len(players)*15)
+                            CardList = [q for q in CardList if q not in FullList] #Removes the cards from the full card list
+
+                            i = 0 #For pulling cards from the full list into packs
+                            for word in players:
+                                pack = FullList[i:i+15]
+                                packs.append(pack) #Holds the packs
+                                i = i+15
+                                await word.send(content="Use !pick _cardname_ to select a card. Happy drafting!\n"+str(pack), file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg"))
+
+
+                    else:
+                        pickNumber = pickNumber + 1
+
+
 
         else:
             await message.author.send("Sorry! That card doesn't look like it's in this pack. Try again.") #Git gud, learn how 2 read   
+
+       
 
     if ('!mypool' in message.content.lower()):
         temppool = []
         for word in pool:
             if message.author.name in word:
-                temppool.append(word[1].name + " : " + word[1].imageUrl) #could send any combination of card properties in any sort of format
+                temppool.append(word[1].name)# + " : " + word[1].imageUrl) #could send any combination of card properties in any sort of format
         await message.author.send(temppool)
         
 
@@ -375,14 +276,14 @@ async def on_message(message):
         tempidpoolside = []
         r = 0
         for word in pool:
-            if (word[1].cardType != "Synchro Monster") and word[1].cardType != "XYZ Monster":                
+            if (word[1].cardType != ("Synchro Monster") or ("Synchro Tuner Monster")) and word[1].cardType != "XYZ Monster":                
                 if message.author.name in word:
                     tempidpoolnoextra.append(word[1].id) #puts the ids of the main deck cards in a list
-            if ((word[1].cardType == "Synchro Monster") or (word[1].cardType == "XYZ Monster")) and (r < 14):
+            if ((word[1].cardType == ("Synchro Monster") or ("Synchro Tuner Monster")) or (word[1].cardType == "XYZ Monster")) and (r < 14):
                 if message.author.name in word:
                     tempidpoolextra.append(word[1].id) #puts the ids of the extra deck cards in a list
                     r = r + 1
-            if ((word[1].cardType == "Synchro Monster") or (word[1].cardType == "XYZ Monster")) and (r > 13):
+            if ((word[1].cardType == ("Synchro Monster") or ("Synchro Tuner Monster")) or (word[1].cardType == "XYZ Monster")) and (r > 13):
                 if message.author.name in word:
                     tempidpoolside.append(word[1].id) #puts the ids of the extra deck cards in an overflow side list
 
