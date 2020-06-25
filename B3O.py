@@ -166,16 +166,19 @@ async def on_message(message):
 
     #Removes people from the draft. Does not use @. For example, !remove fspluver, not !remove @fspluver
     if message.content.lower().strip().startswith('!remove'):
-        y = 0
-        for person in players: #This loop removes them from the players list            
-            if person.name in message.content:
-                players.remove(players[y])                      
-            y = y+1
-        for person in playernames: #This loop removes them from the playernames list
-            if person in message.content:
-                playernames.remove(person)
-                await message.channel.send(person + " has been removed from the draft.")
- 
+        if 'Admin' in str(message.author.roles): #Only admins can do this command
+            y = 0
+            for person in players: #This loop removes them from the players list            
+                if person.name in message.content:
+                    players.remove(players[y])                      
+                y = y+1
+            for person in playernames: #This loop removes them from the playernames list
+                if person in message.content:
+                    playernames.remove(person)
+                    await message.channel.send(person + " has been removed from the draft.")
+        else:
+           
+            await message.channel.send('Only admins can remove players from the draft. If you can no longer play, please let an admin know')
     if('!react' in message.content.lower()):
         msgChannel = message.channel
         
@@ -196,17 +199,19 @@ async def on_message(message):
 
  #Sends first pack to all players
     if ('!!startdraft') in message.content.lower():
-        await message.channel.send('The draft is starting! All players have received their first pack. Good luck!')
-        FullList = random.sample(CardList, len(players)*15)
-        CardList = [q for q in CardList if q not in FullList] #Removes the cards from the full card list
+        if 'Admin' in str(message.author.roles): #Only admins can do this command
+            await message.channel.send('The draft is starting! All players have received their first pack. Good luck!')
+            FullList = random.sample(CardList, len(players)*15)
+            CardList = [q for q in CardList if q not in FullList] #Removes the cards from the full card list
 
-        i = 0 #For pulling cards from the full list into packs
-        for word in players:
-            pack = FullList[i:i+15]
-            packs.append(pack) #Holds the packs
-            i = i+15
-            await word.send(content="Here's your first pack! Use !pick _cardname_ to select a card. Happy drafting!\n"+str(pack), file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg"))
-
+            i = 0 #For pulling cards from the full list into packs
+            for word in players:
+                pack = FullList[i:i+15]
+                packs.append(pack) #Holds the packs
+                i = i+15
+                await word.send(content="Here's your first pack! Use !pick _cardname_ to select a card. Happy drafting!\n"+str(pack), file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg"))
+        else:
+            await message.channel.send('Only admins can start the draft')
 
  #Puts picks into pool and removes the pick from the pack
     if message.content.lower().strip().startswith('!pick'):     
@@ -305,9 +310,12 @@ async def on_message(message):
 
     #Lists all cards in all pools and says who has each card. Could be useful for detecting cheating if necessary
     if ('!totalpool') in message.content.lower():
-        for thing in pool:
-            pooltosend+='%s\n' % thing
-        await message.author.send(file=discord.File(fp=StringIO(pooltosend),filename="OverallPool.ydk"))
+        if 'Admin' in str(message.author.roles): #Only admins can do this command
+            for thing in pool:
+                pooltosend+='%s\n' % thing
+            await message.author.send(file=discord.File(fp=StringIO(pooltosend),filename="OverallPool.ydk"))
+        else:
+            await message.channel.send('Admins only')
 
     if ('!ydk' in message.content.lower()):
         tempidpoolnoextra = []
@@ -348,6 +356,8 @@ async def on_message(message):
         await message.players.send('The draft has concluded! Type "!mypool" to see your cardpool! Good luck in your duels!')
 
 
+
+        
 
 
 
