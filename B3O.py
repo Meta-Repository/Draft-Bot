@@ -126,6 +126,7 @@ i = 0
 x = 0
 t = 0
 pickNumber = 0
+pooltosend = ""
 
 reactions = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '0️⃣',
  '🇦', '🇧','🇨','🇩','🇪']
@@ -145,15 +146,22 @@ async def on_reaction_add(reaction, user):
     global t
     global CardList
 
+    #what message did it
     triggeringMessage = reaction.message
+
+    #checks to make sure there are packs, this is a DM, and the player is in the draft
     if(len(packs) == 0 or  not (user in players) or not "DMChannel" in str(type(reaction.message.channel))):
         print('Reacts are for picking, silly!')
         return    
 
+    #given how reacts are spliced into packs, this gets the index of the reacted card
     cardIndex = reactions.index(str(reaction)) if str(reaction) in reactions else 100
+    #get this player's pack
     workingPack = packs[players.index(user)]
+    #is the react in the pack?
     if(cardIndex <= len(workingPack) - 1):
 
+        #checks to guarantee that there aren't multiple picks from one pack
         poolCount = len([card for card in pool if user.name in card])     
         if(poolCount % 15 > pickNumber):
             await user.send("I know they're all good cards, but one per pack, please. Maybe get a snack or something while you wait.") #we don't like cheaters
@@ -169,6 +177,7 @@ async def on_reaction_add(reaction, user):
             if all (len(y)==length for y in packs):
                 packs = packs[1:] + packs[:1] #Play with this to make packs pass reverse. I think can just add - before the 1s
                 for word in players:
+                    #splices reactions into pack
                     packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, packs[players.index(word)])] 
                     await word.send(content='Your next pack: \n\n'+str(packWithReactions), file=discord.File(fp=imagemanipulator.create_pack_image(packs[players.index(word)]), filename="image.jpg"))
                 if len(packs[0]) == 0:
@@ -185,6 +194,7 @@ async def on_reaction_add(reaction, user):
                             pack = sortPack(FullList[i:i+15])
                             packs.append(pack) #Holds the packs
                             i = i+15
+                            #splices reactions into pack
                             packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, pack)] 
                             await word.send(content="React to select a card. Happy drafting!\n"+str(packWithReactions), file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg"))
 
@@ -196,6 +206,7 @@ async def on_reaction_add(reaction, user):
             if all (len(y)==length for y in packs): #Works (tested with 2 and 3 players)
                 packs = packs[-1:] + packs[:-1] #Play with this to make packs pass reverse. I think can just add - before the 1s
                 for word in players:
+                    #splices reactions into pack
                     packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, packs[players.index(word)])] 
                     await word.send(content='Your next pack: \n\n'+str(packWithReactions), file=discord.File(fp=imagemanipulator.create_pack_image(packs[players.index(word)]), filename="image.jpg"))
                 if len(packs[0]) == 0:
@@ -212,6 +223,7 @@ async def on_reaction_add(reaction, user):
                             pack = sortPack(FullList[i:i+15])
                             packs.append(pack) #Holds the packs
                             i = i+15
+                            #splices reactions into pack
                             packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, pack)] 
                             await word.send(content="React to select a card. Happy drafting!\n"+str(packWithReactions), file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg"))
 
@@ -228,6 +240,7 @@ async def on_message(message):
     global w
     global pickNumber
     global t
+    global pooltosend
     w = 0
     #printprint(message.content.lower())
     if message.author == client.user:
@@ -249,24 +262,28 @@ async def on_message(message):
     if ('!currentplayers') in message.content.lower():
         await message.channel.send(playernames)
         #await message.channel.send(players)
- 
 
    
 
 
  #Sends first pack to all players
     if ('!!startdraft') in message.content.lower():
-        await message.channel.send('The draft is starting! All players have received their first pack. Good luck!')
-        FullList = random.sample(CardList, len(players)*15)
-        CardList = [q for q in CardList if q not in FullList] #Removes the cards from the full card list
+        if 'Admin' in str(message.author.roles): #Only admins can do this command
+            await message.channel.send('The draft is starting! All players have received their first pack. Good luck!')
+            FullList = random.sample(CardList, len(players)*15)
+            CardList = [q for q in CardList if q not in FullList] #Removes the cards from the full card list
 
-        i = 0 #For pulling cards from the full list into packs
-        for word in players:
-            pack = sortPack(FullList[i:i+15])
-            packs.append(pack) #Holds the packs
-            i = i+15
-            packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, pack)] 
-            await word.send(content="Here's your first pack! React to select a card. Happy drafting!\n"+str(packWithReactions), file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg"))
+            i = 0 #For pulling cards from the full list into packs
+            for word in players:
+                pack = sortPack(FullList[i:i+15])
+                packs.append(pack) #Holds the packs
+                i = i+15
+                #splices reactions into pack
+                packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, pack)] 
+                await word.send(content="Here's your first pack! React to select a card. Happy drafting!\n"+str(packWithReactions), file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg"))
+        else:
+            await message.channel.send('Only admins can start the draft')
+
        
 
     if ('!mypool' in message.content.lower()):
@@ -276,6 +293,15 @@ async def on_message(message):
                 temppool.append(word[1].name)# + " : " + word[1].imageUrl) #could send any combination of card properties in any sort of format
         await message.author.send(temppool)
         
+
+    #Lists all cards in all pools and says who has each card. Could be useful for detecting cheating if necessary
+    if ('!totalpool') in message.content.lower():
+        if 'Admin' in str(message.author.roles): #Only admins can do this command
+            for thing in pool:
+                pooltosend+='%s\n' % thing
+            await message.author.send(file=discord.File(fp=StringIO(pooltosend),filename="OverallPool.ydk"))
+        else:
+            await message.channel.send('Admins only')
 
     if ('!ydk' in message.content.lower()):
         tempidpoolnoextra = []
@@ -313,9 +339,12 @@ async def on_message(message):
         await message.author.send(file=discord.File(fp=StringIO(ydkString),filename="YourDraftPool.ydk"))
 
     if ('!draftdone') in message.content.lower():
-        await message.players.send('The draft has concluded! Type "!mypool" to see your cardpool! Good luck in your duels!')
+        if 'Admin' in str(message.author.roles): #Only admins can do this command
+            await message.players.send('The draft has concluded! Type "!mypool" to see your cardpool! Good luck in your duels!')
 
 
+
+        
 
 
 
