@@ -1,4 +1,3 @@
-
 import discord
 import random
 import asyncio
@@ -9,6 +8,7 @@ import os.path
 from os import path
 import imagemanipulator
 from io import StringIO
+import asyncio
 
 BotToken = "NzA3MzI0NjAxNDQ4NzkyMDY0.XrHJbw.mwn0yBiFMXRTBs2W93ePyWwcW64"
 GuildName = "fspluver's server"
@@ -179,7 +179,7 @@ async def on_reaction_add(reaction, user):
                 for word in players:
                     #splices reactions into pack
                     packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, packs[players.index(word)])] 
-                    await word.send(content='Your next pack: \n\n'+str(packWithReactions), file=discord.File(fp=imagemanipulator.create_pack_image(packs[players.index(word)]), filename="image.jpg"))
+                    asyncio.create_task(add_reactions(await word.send(content='Your next pack: \n\n'+str(packWithReactions), file=discord.File(fp=imagemanipulator.create_pack_image(packs[players.index(word)]), filename="image.jpg")), reactions))
                 if len(packs[0]) == 0:
                     packs = []
                     pickNumber = 0
@@ -196,7 +196,7 @@ async def on_reaction_add(reaction, user):
                             i = i+15
                             #splices reactions into pack
                             packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, pack)] 
-                            await word.send(content="React to select a card. Happy drafting!\n"+str(packWithReactions), file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg"))
+                            asyncio.create_task(add_reactions(await word.send(content="React to select a card. Happy drafting!\n"+str(packWithReactions), file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg")), reactions))
 
 
                 else:
@@ -208,7 +208,7 @@ async def on_reaction_add(reaction, user):
                 for word in players:
                     #splices reactions into pack
                     packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, packs[players.index(word)])] 
-                    await word.send(content='Your next pack: \n\n'+str(packWithReactions), file=discord.File(fp=imagemanipulator.create_pack_image(packs[players.index(word)]), filename="image.jpg"))
+                    asyncio.create_task(add_reactions(await word.send(content='Your next pack: \n\n'+str(packWithReactions), file=discord.File(fp=imagemanipulator.create_pack_image(packs[players.index(word)]), filename="image.jpg")), reactions))
                 if len(packs[0]) == 0:
                     packs = []
                     pickNumber = 0
@@ -225,7 +225,7 @@ async def on_reaction_add(reaction, user):
                             i = i+15
                             #splices reactions into pack
                             packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, pack)] 
-                            await word.send(content="React to select a card. Happy drafting!\n"+str(packWithReactions), file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg"))
+                            asyncio.create_task(add_reactions(await word.send(content="React to select a card. Happy drafting!\n"+str(packWithReactions), file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg")), reactions))
 
 
                 else:
@@ -280,7 +280,7 @@ async def on_message(message):
                 i = i+15
                 #splices reactions into pack
                 packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, pack)] 
-                await word.send(content="Here's your first pack! React to select a card. Happy drafting!\n"+str(packWithReactions), file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg"))
+                asyncio.create_task(add_reactions(await word.send(content="Here's your first pack! React to select a card. Happy drafting!\n"+str(packWithReactions), file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg")), reactions))
         else:
             await message.channel.send('Only admins can start the draft')
 
@@ -342,10 +342,9 @@ async def on_message(message):
         if 'Admin' in str(message.author.roles): #Only admins can do this command
             await message.players.send('The draft has concluded! Type "!mypool" to see your cardpool! Good luck in your duels!')
 
-
-
-        
-
+async def add_reactions(message, emojis):
+    for emoji in emojis:
+        asyncio.create_task(message.add_reaction(emoji))
 
 
 client.run(BotToken)
