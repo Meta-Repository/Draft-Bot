@@ -46,6 +46,13 @@ class CardInfo:
     def __str__(self):
         self.name
 
+def sortPack(pack):
+    #this is going to be sloppy shit
+    monsters = [card for card in pack if 'monster' in card.cardType.lower() and ('synchro' not in card.cardType.lower() and 'xyz' not in card.cardType.lower())]
+    spells = [card for card in pack if 'spell' in card.cardType.lower()]
+    traps = [card for card in pack if 'trap' in card.cardType.lower()]
+    extras = [card for card in pack if 'xyz' in card.cardType.lower() or 'synchro' in card.cardType.lower()]
+    return monsters + spells + traps + extras
 
 CardList = []
 
@@ -120,6 +127,9 @@ x = 0
 t = 0
 pickNumber = 0
 
+reactions = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '0️⃣',
+ '🇦', '🇧','🇨','🇩','🇪']
+
 #Welcomes people who join the server
 @client.event
 async def on_member_join(member):
@@ -128,8 +138,86 @@ async def on_member_join(member):
         f'Hi {member.name}, welcome to my Discord server!'
     )
 
+@client.event
+async def on_reaction_add(reaction, user):
+    global packs
+    global pickNumber
+    global t
+    global CardList
+
+    triggeringMessage = reaction.message
+    if(len(packs) == 0 or  not (user in players) or not "DMChannel" in str(type(reaction.message.channel))):
+        print('Reacts are for picking, silly!')
+        return    
+
+    cardIndex = reactions.index(str(reaction)) if str(reaction) in reactions else 100
+    workingPack = packs[players.index(user)]
+    if(cardIndex <= len(workingPack) - 1):
+
+        poolCount = len([card for card in pool if user.name in card])     
+        if(poolCount % 15 > pickNumber):
+            await user.send("I know they're all good cards, but one per pack, please. Maybe get a snack or something while you wait.") #we don't like cheaters
+            return  
+
+        pool.append([user.name, workingPack[cardIndex]]) #add card to pool
+        workingPack.remove(workingPack[cardIndex]) #remove card from pack
+        await user.send('Nice pick! It has been added to your pool. Type !mypool to view your entire cardpool.')
+
+        #Automatically passing the pack
+        length = len(packs[0])
+        if t == (1 or 3): #doubling the below code. If pack 1 or 3 is it passes one way. If not it passes the other way
+            if all (len(y)==length for y in packs):
+                packs = packs[1:] + packs[:1] #Play with this to make packs pass reverse. I think can just add - before the 1s
+                for word in players:
+                    packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, packs[players.index(word)])] 
+                    await word.send(content='Your next pack: \n\n'+str(packWithReactions), file=discord.File(fp=imagemanipulator.create_pack_image(packs[players.index(word)]), filename="image.jpg"))
+                if len(packs[0]) == 0:
+                    packs = []
+                    pickNumber = 0
+                    t = t+1
+                    if t < 4:
+                        await triggeringMessage.channel.send('Here is your next pack! It may take a few seconds to load. Good luck!')
+                        FullList = random.sample(CardList, len(players)*15)
+                        CardList = [q for q in CardList if q not in FullList] #Removes the cards from the full card list
+
+                        i = 0 #For pulling cards from the full list into packs
+                        for word in players:
+                            pack = sortPack(FullList[i:i+15])
+                            packs.append(pack) #Holds the packs
+                            i = i+15
+                            packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, pack)] 
+                            await word.send(content="React to select a card. Happy drafting!\n"+str(packWithReactions), file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg"))
 
 
+                else:
+                    pickNumber = pickNumber + 1
+
+        else:
+            if all (len(y)==length for y in packs): #Works (tested with 2 and 3 players)
+                packs = packs[-1:] + packs[:-1] #Play with this to make packs pass reverse. I think can just add - before the 1s
+                for word in players:
+                    packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, packs[players.index(word)])] 
+                    await word.send(content='Your next pack: \n\n'+str(packWithReactions), file=discord.File(fp=imagemanipulator.create_pack_image(packs[players.index(word)]), filename="image.jpg"))
+                if len(packs[0]) == 0:
+                    packs = []
+                    pickNumber = 0
+                    t = t+1
+                    if t < 4:
+                        await triggeringMessage.channel.send('Here is your next pack! It may take a few seconds to load. Good luck!')
+                        FullList = random.sample(CardList, len(players)*15)
+                        CardList = [q for q in CardList if q not in FullList] #Removes the cards from the full card list
+
+                        i = 0 #For pulling cards from the full list into packs
+                        for word in players:
+                            pack = sortPack(FullList[i:i+15])
+                            packs.append(pack) #Holds the packs
+                            i = i+15
+                            packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, pack)] 
+                            await word.send(content="React to select a card. Happy drafting!\n"+str(packWithReactions), file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg"))
+
+
+                else:
+                    pickNumber = pickNumber + 1
 
 #Responds in chat to messages. 
 @client.event
@@ -163,22 +251,7 @@ async def on_message(message):
         #await message.channel.send(players)
  
 
-    if('!react' in message.content.lower()):
-        msgChannel = message.channel
-        
-        print('it hapen')
-
-        await msgChannel.send('React, I dare you.')
-
-        def vibe_check(reaction, user):
-            return user != None
-
-        try:
-            reaction, user = await client.wait_for('reaction_add', timeout=10.0, check=vibe_check)
-        except asyncio.TimeoutError:
-            await msgChannel.send('Time\'s up, coward.')
-        else:
-            await msgChannel.send(user.name + ' thinks ' + str(reaction) + ' is a cool reaction.')
+   
 
 
  #Sends first pack to all players
@@ -189,97 +262,11 @@ async def on_message(message):
 
         i = 0 #For pulling cards from the full list into packs
         for word in players:
-            pack = FullList[i:i+15]
+            pack = sortPack(FullList[i:i+15])
             packs.append(pack) #Holds the packs
             i = i+15
-            await word.send(content="Here's your first pack! Use !pick _cardname_ to select a card. Happy drafting!\n"+str(pack), file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg"))
-
-
- #Puts picks into pool and removes the pick from the pack
-    if message.content.lower().strip().startswith('!pick'):     
-
-        #card name, all lower, without trailing or leading spaces
-        pickText = message.content.lower().replace('!pick', '').strip()
-
-        #this is my pack, there are many like it, but this one is mine
-        workingPack = packs[players.index(message.author)]
-
-        poolCount = len([card for card in pool if message.author.name in card])
-        
-        if(poolCount % 15 > pickNumber):
-            await message.author.send("I know they're all good cards, but one per pack, please. Maybe get a snack or something while you wait.") #we don't like cheaters
-            return   
-
-
-        #index of the card in the pack, if it's -1 after we verify it ain't in there
-        cardIndex = -1
-        try: #this language's iteration syntax confuses me greatly
-            cardIndex = next(i for i, c in enumerate(workingPack) if pickText in c.name.lower())
-        except:
-            cardIndex = -1
-
-        if cardIndex != -1: #Changed from earlier versions so people can only pick from their pack            
-            pool.append([message.author.name, workingPack[cardIndex]]) #add card to pool
-            workingPack.remove(workingPack[cardIndex]) #remove card from pack
-            await message.author.send('---------------Nice pick! It has been added to your pool.---------------\nType !mypool to view your entire cardpool.')      
-
-            #Automatically passing the pack
-            length = len(packs[0])
-            if t == (1 or 3): #doubling the below code. If pack 1 or 3 is it passes one way. If not it passes the other way
-                if all (len(y)==length for y in packs):
-                    packs = packs[1:] + packs[:1] #Play with this to make packs pass reverse. I think can just add - before the 1s
-                    for word in players:
-                        await word.send(content='Your next pack contains:\n'+str(packs[players.index(word)]), file=discord.File(fp=imagemanipulator.create_pack_image(packs[players.index(word)]), filename="image.jpg"))
-                    if len(packs[0]) == 0:
-                        packs = []
-                        pickNumber = 0
-                        t = t+1
-                        if t < 4:
-                            await message.channel.send('Here is your next pack! It may take a few seconds to load. Good luck!')
-                            FullList = random.sample(CardList, len(players)*15)
-                            CardList = [q for q in CardList if q not in FullList] #Removes the cards from the full card list
-
-                            i = 0 #For pulling cards from the full list into packs
-                            for word in players:
-                                pack = FullList[i:i+15]
-                                packs.append(pack) #Holds the packs
-                                i = i+15
-                                await word.send(content="Use !pick _cardname_ to select a card. Happy drafting!\n"+str(pack), file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg"))
-
-
-                    else:
-                        pickNumber = pickNumber + 1
-
-            else:
-                if all (len(y)==length for y in packs): #Works (tested with 2 and 3 players)
-                    packs = packs[-1:] + packs[:-1] #Play with this to make packs pass reverse. I think can just add - before the 1s
-                    for word in players:
-                        await word.send(content='Your next pack contains:\n'+str(packs[players.index(word)]), file=discord.File(fp=imagemanipulator.create_pack_image(packs[players.index(word)]), filename="image.jpg"))
-                    if len(packs[0]) == 0:
-                        packs = []
-                        pickNumber = 0
-                        t = t+1
-                        if t < 4:
-                            await message.channel.send('Here is your next pack! It may take a few seconds to load. Good luck!')
-                            FullList = random.sample(CardList, len(players)*15)
-                            CardList = [q for q in CardList if q not in FullList] #Removes the cards from the full card list
-
-                            i = 0 #For pulling cards from the full list into packs
-                            for word in players:
-                                pack = FullList[i:i+15]
-                                packs.append(pack) #Holds the packs
-                                i = i+15
-                                await word.send(content="Use !pick _cardname_ to select a card. Happy drafting!\n"+str(pack), file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg"))
-
-
-                    else:
-                        pickNumber = pickNumber + 1
-
-
-
-        else:
-            await message.author.send("Sorry! That card doesn't look like it's in this pack. Try again.") #Git gud, learn how 2 read   
-
+            packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, pack)] 
+            await word.send(content="Here's your first pack! React to select a card. Happy drafting!\n"+str(packWithReactions), file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg"))
        
 
     if ('!mypool' in message.content.lower()):
