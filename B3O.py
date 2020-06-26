@@ -8,7 +8,6 @@ import os.path
 from os import path
 import imagemanipulator
 from io import StringIO
-import asyncio
 
 BotToken = "NzA3MzI0NjAxNDQ4NzkyMDY0.XrHJbw.mwn0yBiFMXRTBs2W93ePyWwcW64"
 GuildName = "fspluver's server"
