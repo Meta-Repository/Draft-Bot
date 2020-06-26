@@ -190,6 +190,9 @@ async def on_message(message):
     global pickNumber
     global t
     global pooltosend
+    global players
+    global pool
+    global playernames
     w = 0
     #printprint(message.content.lower())
     if message.author == client.user:
@@ -250,6 +253,37 @@ async def on_message(message):
             asyncio.create_task(message.author.send(file=discord.File(fp=StringIO(pooltosend),filename="OverallPool.ydk")))
         else:
             asyncio.create_task(message.channel.send('Admins only'))
+    
+    #Removes people from the draft. Does not use @. For example, !remove fspluver, not !remove @fspluver
+    if message.content.lower().strip().startswith('!remove'):
+        if 'Admin' in str(message.author.roles): #Only admins can do this command
+            y = 0
+            for person in players: #This loop removes them from the players list            
+                if person.name in message.content:
+                    players.remove(players[y])                      
+                y = y+1
+            for person in playernames: #This loop removes them from the playernames list
+                if person in message.content:
+                    playernames.remove(person)
+                    await message.channel.send(person + " has been removed from the draft.")
+        else:           
+            await message.channel.send('Only admins can remove players from the draft. If you can no longer play, please let an admin know')
+
+    if message.content.lower().strip().startswith('!reset'):
+        if 'Admin' in str(message.author.roles):
+            pools = []
+            pool = []
+            players = []
+            playernames = []
+            packs = []
+            pack = []
+            i = 0
+            x = 0
+            t = 0
+            pickNumber = 0
+            pooltosend = ""
+            asyncio.create_task(message.channel.send('Draft reset.'))
+
 
     if ('!ydk' in message.content.lower()):
         tempidpoolnoextra = []
