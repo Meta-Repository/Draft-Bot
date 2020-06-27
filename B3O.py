@@ -192,7 +192,9 @@ async def on_message(message):
     global players
     global pool
     global playernames
+    global u
     w = 0
+    u = 0
     #printprint(message.content.lower())
     if message.author == client.user:
         return
@@ -206,9 +208,10 @@ async def on_message(message):
     #Registers the player
     if (('!joindraft') in message.content.lower() and packs == []) and (message.author not in players):
         #made it announce name - we might want to look into always sending this to the main server even if draft is joined in PM
-        asyncio.create_task(message.channel.send(message.author.name + ' has joined the draft!'))
-        players.append(message.author)
-        playernames.append(message.author.name)
+        if u == 0: #U becomes 1 once the draft has started. Prevents people from joining mid draft
+            asyncio.create_task(message.channel.send(message.author.name + ' has joined the draft!'))
+            players.append(message.author)
+            playernames.append(message.author.name)
     #Sends the name of all registered players. Commented out has all the person's info (e.g. Discord ID)    
     if ('!currentplayers') in message.content.lower():
         asyncio.create_task(message.channel.send(playernames))
@@ -219,6 +222,7 @@ async def on_message(message):
  #Sends first pack to all players
     if ('!!startdraft') in message.content.lower():
         if 'Admin' in str(message.author.roles): #Only admins can do this command
+            u = 1 #See !joindraft. Prevents people from signing up once draft has started
             asyncio.create_task(message.channel.send('The draft is starting! All players have received their first pack. Good luck!'))
             FullList = random.sample(CardList, len(players)*15)
             CardList = [q for q in CardList if q not in FullList] #Removes the cards from the full card list
@@ -289,15 +293,20 @@ async def on_message(message):
         tempidpoolextra = []
         tempidpoolside = []
         r = 0
+
+        #extras = [card for card in pack if 'xyz' in card.cardType.lower() or 'synchro' in card.cardType.lower()]
+
         for word in pool:
-            if (word[1].cardType != ("Synchro Monster") or ("Synchro Tuner Monster")) and word[1].cardType != "XYZ Monster":                
+            if (word[1].cardType != ("Synchro Monster") or ("Synchro Tuner Monster")) and (word[1].cardType != "XYZ Monster"):                
                 if message.author.name in word:
                     tempidpoolnoextra.append(word[1].id) #puts the ids of the main deck cards in a list
-            if ((word[1].cardType == ("Synchro Monster") or ("Synchro Tuner Monster")) or (word[1].cardType == "XYZ Monster")) and (r < 14):
+                    print("YesMain")
+            if ('xyz' in word[1].cardType.lower() or 'synchro' in word[1].cardType.lower() and (r < 14)):
                 if message.author.name in word:
                     tempidpoolextra.append(word[1].id) #puts the ids of the extra deck cards in a list
                     r = r + 1
-            if ((word[1].cardType == ("Synchro Monster") or ("Synchro Tuner Monster")) or (word[1].cardType == "XYZ Monster")) and (r > 13):
+
+            if ('xyz' in word[1].cardType.lower() or 'synchro' in word[1].cardType.lower()) and (r > 13):
                 if message.author.name in word:
                     tempidpoolside.append(word[1].id) #puts the ids of the extra deck cards in an overflow side list
 
@@ -317,6 +326,7 @@ async def on_message(message):
             ydkString+='%s\n' % listitem           
         for listitem in tempidpoolside:
             ydkString+='%s\n' % listitem
+        print(ydkString)
         asyncio.create_task(message.author.send(file=discord.File(fp=StringIO(ydkString),filename="YourDraftPool.ydk")))
 
     if ('!draftdone') in message.content.lower():
