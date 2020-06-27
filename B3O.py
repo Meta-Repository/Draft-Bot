@@ -127,10 +127,6 @@ async def on_reaction_add(reaction, user):
         if t == (1 or 3): #doubling the below code. If pack 1 or 3 is it passes one way. If not it passes the other way
             if all (len(y)==length for y in packs):
                 packs = packs[1:] + packs[:1] #Play with this to make packs pass reverse. I think can just add - before the 1s
-                for word in players:
-                    #splices reactions into pack
-                    packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, packs[players.index(word)])] 
-                    asyncio.create_task(send_pack_message('Your next pack: \n\n'+str(packWithReactions), word, packs[players.index(word)]))
                 if len(packs[0]) == 0:
                     packs = []
                     pickNumber = 0
@@ -148,16 +144,18 @@ async def on_reaction_add(reaction, user):
                             #splices reactions into pack
                             packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, pack)]
                             asyncio.create_task(send_pack_message("React to select a card. Happy drafting!\n"+str(packWithReactions), word, pack))
-                else:
+                else:                   
+                    for word in players:
+                        #splices reactions into pack
+                        packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, packs[players.index(word)])] 
+                        asyncio.create_task(send_pack_message('Your next pack: \n\n'+str(packWithReactions), word, packs[players.index(word)]))
                     pickNumber = pickNumber + 1
+               
+                
 
         else:
             if all (len(y)==length for y in packs): #Works (tested with 2 and 3 players)
                 packs = packs[-1:] + packs[:-1] #Play with this to make packs pass reverse. I think can just add - before the 1s
-                for word in players:
-                    #splices reactions into pack
-                    packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, packs[players.index(word)])]
-                    asyncio.create_task(send_pack_message('Your next pack: \n\n'+str(packWithReactions), word, packs[players.index(word)]))
                 if len(packs[0]) == 0:
                     packs = []
                     pickNumber = 0
@@ -175,9 +173,15 @@ async def on_reaction_add(reaction, user):
                             #splices reactions into pack
                             packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, pack)] 
                             asyncio.create_task(send_pack_message("React to select a card. Happy drafting!\n"+str(packWithReactions), word, pack))
-
                 else:
+                    for word in players:
+                        #splices reactions into pack
+                        packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, packs[players.index(word)])]
+                        asyncio.create_task(send_pack_message('Your next pack: \n\n'+str(packWithReactions), word, packs[players.index(word)]))
                     pickNumber = pickNumber + 1
+
+                
+                   
 
 #Responds in chat to messages. 
 @client.event
