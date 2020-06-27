@@ -212,10 +212,16 @@ async def on_message(message):
     #Registers the player
     if (('!joindraft') in message.content.lower() and packs == []) and (message.author not in players):
         #made it announce name - we might want to look into always sending this to the main server even if draft is joined in PM
-        if u == 0: #U becomes 1 once the draft has started. Prevents people from joining mid draft
+        if u == 0: #u becomes 1 once the draft has started. Prevents people from joining mid draft
             asyncio.create_task(message.channel.send(message.author.name + ' has joined the draft!'))
             players.append(message.author)
             playernames.append(message.author.name)
+    #de-registers a player
+    if ('!leavedraft') in message.content.lower() and message.author in players:
+        if u == 0: #u becomes 1 once the draft has started. Prevents people from leaving mid draft
+            asyncio.create_task(message.channel.send('So sorry to see you leave, ' + message.author.name + '. Catch you for the next one!'))
+            players.remove(message.author)
+            playernames.remove(message.author.name)
     #Sends the name of all registered players. Commented out has all the person's info (e.g. Discord ID)    
     if ('!currentplayers') in message.content.lower():
         asyncio.create_task(message.channel.send(playernames))
@@ -287,6 +293,7 @@ async def on_message(message):
             i = 0
             x = 0
             t = 0
+            u = 0
             pickNumber = 0
             pooltosend = ""
             asyncio.create_task(message.channel.send('Draft reset.'))
