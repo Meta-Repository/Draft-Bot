@@ -53,6 +53,9 @@ def sortPack(pack):
     extras = [card for card in pack if 'xyz' in card.cardType.lower() or 'synchro' in card.cardType.lower()]
     return monsters + spells + traps + extras
 
+
+
+
 CardList = []
 
 #import code. Short and sweet.
@@ -82,6 +85,7 @@ pooltosend = ""
 
 reactions = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '0️⃣',
  '🇦', '🇧','🇨','🇩','🇪']
+
 
 #Welcomes people who join the server
 @client.event
@@ -350,7 +354,7 @@ async def add_reactions(message, emojis):
 
 #This exists to allow making the pack messages async.
 async def send_pack_message(text, player, pack):
-    asyncio.create_task(add_reactions(await player.send(content=text, file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg")), reactions))
+    asyncio.create_task(add_reactions(await player.send(content=text, file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg")), reactions[:len(pack)]))
 
 client.run(BotToken)
 
