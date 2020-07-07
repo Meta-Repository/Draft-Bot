@@ -53,20 +53,28 @@ def sortPack(pack):
     extras = [card for card in pack if 'xyz' in card.cardType.lower() or 'synchro' in card.cardType.lower()]
     return monsters + spells + traps + extras
 
+
+
+
 CardList = []
 
 #import code. Short and sweet.
-if (path.exists('list.cub')):
-    print('Cube list discovered. Importing.')
-    with(open("list.cub", 'r')) as cubeFile:
-        #Python makes some things so so easy
-        cardDict = json.load(cubeFile)
-        #Instantiate a new CardInfo object for each card in the list. Definitely could pull in more info from the JSON - there's a lot there.
-        for card in cardDict:
-            CardList.append(CardInfo(card['name'], card['id'], card['type'], card['desc'], card['card_images'][0]['image_url']))
+def import_cube():
+    global CardList
+    CardList = []
+    if (path.exists('list.cub')):
+        print('Cube list discovered. Importing.')
+        with(open("list.cub", 'r')) as cubeFile:
+            #Python makes some things so so easy
+            cardDict = json.load(cubeFile)
+            #Instantiate a new CardInfo object for each card in the list. Definitely could pull in more info from the JSON - there's a lot there.
+            for card in cardDict:
+                CardList.append(CardInfo(card['name'], card['id'], card['type'], card['desc'], card['card_images'][0]['image_url']))
 
-else:
-    print('Did not find cube list.')
+    else:
+        print('Did not find cube list.')
+
+import_cube()
 
 pools = []
 pool = []
@@ -79,11 +87,10 @@ x = 0
 t = 0
 pickNumber = 0
 pooltosend = ""
-PickRecord = []
-RecordtoSend = ""
 
 reactions = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '0️⃣',
  '🇦', '🇧','🇨','🇩','🇪']
+
 
 #Welcomes people who join the server
 @client.event
@@ -99,11 +106,6 @@ async def on_reaction_add(reaction, user):
     global pickNumber
     global t
     global CardList
-    global PickRecord
-    
-
-    #what message did it
-    triggeringMessage = reaction.message
 
     #checks to make sure there are packs, this is a DM, and the player is in the draft
     if(len(packs) == 0 or  not (user in players) or not "DMChannel" in str(type(reaction.message.channel))):
@@ -113,6 +115,15 @@ async def on_reaction_add(reaction, user):
     cardIndex = reactions.index(str(reaction)) if str(reaction) in reactions else 100
     #get this player's pack
     workingPack = packs[players.index(user)]
+
+    pick(user, cardIndex, workingPack)
+                
+def pick(user, cardIndex, workingPack, afk = False):
+    global packs
+    global pickNumber
+    global t
+    global CardList
+
     #is the react in the pack?
     if(cardIndex <= len(workingPack) - 1):
 
@@ -125,68 +136,44 @@ async def on_reaction_add(reaction, user):
         pool.append([user.name, workingPack[cardIndex]]) #add card to pool
         workingPack.remove(workingPack[cardIndex]) #remove card from pack
         asyncio.create_task(user.send('Nice pick! It has been added to your pool. Type !mypool to view your entire cardpool.'))
-        PickRecord.append([user.name, workingPack[cardIndex], len(workingPack)])
+
+        if(afk and pickNumber == 14):
+            asyncio.create_task(user.send('You have been removed from the draft due to inactivity.'))
+            del packs[players.index(user)]
+            players.remove(user)
 
         #Automatically passing the pack
         length = len(packs[0])
-        if t == (1 or 3): #doubling the below code. If pack 1 or 3 is it passes one way. If not it passes the other way
-            if all (len(y)==length for y in packs):
+        if all (len(y)==length for y in packs):
+            if t == (1 or 3):
                 packs = packs[1:] + packs[:1] #Play with this to make packs pass reverse. I think can just add - before the 1s
-                if len(packs[0]) == 0:
-                    packs = []
-                    pickNumber = 0
-                    t = t+1
-                    if t < 4:
-                        asyncio.create_task(triggeringMessage.channel.send('Here is your next pack! It may take a few seconds to load. Good luck!'))
-                        FullList = random.sample(CardList, len(players)*15)
-                        CardList = [q for q in CardList if q not in FullList] #Removes the cards from the full card list
-
-                        i = 0 #For pulling cards from the full list into packs
-                        for word in players:
-                            pack = sortPack(FullList[i:i+15])
-                            packs.append(pack) #Holds the packs
-                            i = i+15
-                            #splices reactions into pack
-                            packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, pack)]
-                            asyncio.create_task(send_pack_message("React to select a card. Happy drafting!\n"+str(packWithReactions), word, pack))
-                else:                   
-                    for word in players:
-                        #splices reactions into pack
-                        packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, packs[players.index(word)])] 
-                        asyncio.create_task(send_pack_message('Your next pack: \n\n'+str(packWithReactions), word, packs[players.index(word)]))
-                    pickNumber = pickNumber + 1
-               
-                
-
-        else:
-            if all (len(y)==length for y in packs): #Works (tested with 2 and 3 players)
+            else:
                 packs = packs[-1:] + packs[:-1] #Play with this to make packs pass reverse. I think can just add - before the 1s
-                if len(packs[0]) == 0:
-                    packs = []
-                    pickNumber = 0
-                    t = t+1
-                    if t < 4:
-                        asyncio.create_task(triggeringMessage.channel.send('Here is your next pack! It may take a few seconds to load. Good luck!'))
-                        FullList = random.sample(CardList, len(players)*15)
-                        CardList = [q for q in CardList if q not in FullList] #Removes the cards from the full card list
+            if len(packs[0]) == 0:
+                packs = []
+                pickNumber = 0
+                t = t+1
+                if t < 4:
+                    asyncio.create_task(user.send('Here is your next pack! It may take a few seconds to load. Good luck!'))
+                    FullList = random.sample(CardList, len(players)*15)
+                    CardList = [q for q in CardList if q not in FullList] #Removes the cards from the full card list
 
-                        i = 0 #For pulling cards from the full list into packs
-                        for word in players:
-                            pack = sortPack(FullList[i:i+15])
-                            packs.append(pack) #Holds the packs
-                            i = i+15
-                            #splices reactions into pack
-                            packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, pack)] 
-                            asyncio.create_task(send_pack_message("React to select a card. Happy drafting!\n"+str(packWithReactions), word, pack))
-                else:
+                    i = 0 #For pulling cards from the full list into packs
                     for word in players:
+                        pack = sortPack(FullList[i:i+15])
+                        packs.append(pack) #Holds the packs
+                        i = i+15
                         #splices reactions into pack
-                        packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, packs[players.index(word)])]
-                        asyncio.create_task(send_pack_message('Your next pack: \n\n'+str(packWithReactions), word, packs[players.index(word)]))
-                    pickNumber = pickNumber + 1
-
-                
-                   
+                        packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, pack)]
+                        asyncio.create_task(send_pack_message("React to select a card. Happy drafting!\n"+str(packWithReactions), word, pack))
+                asyncio.create_task(pick_timer())
+            else:                   
+                for word in players:
+                    #splices reactions into pack
+                    packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, packs[players.index(word)])] 
+                    asyncio.create_task(send_pack_message('Your next pack: \n\n'+str(packWithReactions), word, packs[players.index(word)]))
+                pickNumber = pickNumber + 1
+                asyncio.create_task(pick_timer())
 
 #Responds in chat to messages. 
 @client.event
@@ -202,7 +189,6 @@ async def on_message(message):
     global pool
     global playernames
     global u
-    global RecordtoSend
     w = 0
     u = 0
     #printprint(message.content.lower())
@@ -212,12 +198,6 @@ async def on_message(message):
 
  #Players - Sign up and check current players
 
-    if ('!pickrecord') in message.content.lower():
-        #await message.author.send(PickRecord)
-
-        for item in PickRecord:
-            RecordtoSend+='%s\n' % item
-        asyncio.create_task(message.author.send(file=discord.File(fp=StringIO(RecordtoSend),filename="PickRecord.txt")))
     #Message is someone tries to sign up twice
     if ('!joindraft') in message.content.lower() and message.author in players:
         asyncio.create_task(message.channel.send('It\'s not possible! No one has the power to be in two draft seats at once!'))
@@ -257,6 +237,8 @@ async def on_message(message):
                 #splices reactions into pack
                 packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, pack)] 
                 asyncio.create_task(send_pack_message("Here's your first pack! React to select a card. Happy drafting!\n"+str(packWithReactions), word, pack))
+            
+            asyncio.create_task(pick_timer())
         else:
             asyncio.create_task(message.channel.send('Only admins can start the draft'))
 
@@ -308,6 +290,7 @@ async def on_message(message):
             u = 0
             pickNumber = 0
             pooltosend = ""
+            import_cube()
             asyncio.create_task(message.channel.send('Draft reset.'))
 
 
@@ -323,7 +306,6 @@ async def on_message(message):
             if (word[1].cardType != ("Synchro Monster") or ("Synchro Tuner Monster")) and (word[1].cardType != "XYZ Monster"):                
                 if message.author.name in word:
                     tempidpoolnoextra.append(word[1].id) #puts the ids of the main deck cards in a list
-                    print("YesMain")
             if ('xyz' in word[1].cardType.lower() or 'synchro' in word[1].cardType.lower() and (r < 14)):
                 if message.author.name in word:
                     tempidpoolextra.append(word[1].id) #puts the ids of the extra deck cards in a list
@@ -355,13 +337,30 @@ async def on_message(message):
         if 'Admin' in str(message.author.roles): #Only admins can do this command
             asyncio.create_task(message.players.send('The draft has concluded! Type "!mypool" to see your cardpool! Good luck in your duels!'))
 
+async def pick_timer():
+    global players
+    global packs
+    global pickNumber
+    
+    timer = 140 - (8 * pickNumber)
+    intialPickNumber = pickNumber
+    await asyncio.sleep(timer - 10)
+    unpickedPlayers = (x for x in players if len(packs[players.index(x)]) == 15 - intialPickNumber)
+    for unpickedPlayer in unpickedPlayers:
+        asyncio.create_task(unpickedPlayer.send('Only 10 seconds left to pick!'))
+    await asyncio.sleep(10)
+    unpickedPlayers = (x for x in players if len(packs[players.index(x)]) == 15 - intialPickNumber)
+    for unpickedPlayer in unpickedPlayers:
+        asyncio.create_task(unpickedPlayer.send('You automatically picked the first card.'))
+        pick(unpickedPlayer, 0, packs[players.index(unpickedPlayer)], True)
+
 async def add_reactions(message, emojis):
     for emoji in emojis:
         asyncio.create_task(message.add_reaction(emoji))
 
 #This exists to allow making the pack messages async.
 async def send_pack_message(text, player, pack):
-    asyncio.create_task(add_reactions(await player.send(content=text, file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg")), reactions))
+    asyncio.create_task(add_reactions(await player.send(content=text, file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg")), reactions[:len(pack)]))
 
 client.run(BotToken)
 
