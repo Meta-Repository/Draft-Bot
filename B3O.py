@@ -87,6 +87,8 @@ x = 0
 t = 0
 pickNumber = 0
 pooltosend = ""
+PickLog = []
+logtosend = ""
 
 reactions = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '0️⃣',
  '🇦', '🇧','🇨','🇩','🇪']
@@ -123,6 +125,7 @@ def pick(user, cardIndex, workingPack, afk = False):
     global pickNumber
     global t
     global CardList
+    global PickLog
 
     #is the react in the pack?
     if(cardIndex <= len(workingPack) - 1):
@@ -136,6 +139,7 @@ def pick(user, cardIndex, workingPack, afk = False):
         pool.append([user.name, workingPack[cardIndex]]) #add card to pool
         workingPack.remove(workingPack[cardIndex]) #remove card from pack
         asyncio.create_task(user.send('Nice pick! It has been added to your pool. Type !mypool to view your entire cardpool.'))
+        PickLog.append([workingPack[cardIndex], len(workingPack), len(workingPack)])
 
         if(afk and pickNumber == 14):
             asyncio.create_task(user.send('You have been removed from the draft due to inactivity.'))
@@ -189,6 +193,8 @@ async def on_message(message):
     global pool
     global playernames
     global u
+    global PickLog
+    global logtosend
     w = 0
     u = 0
     #printprint(message.content.lower())
@@ -336,6 +342,12 @@ async def on_message(message):
     if ('!draftdone') in message.content.lower():
         if 'Admin' in str(message.author.roles): #Only admins can do this command
             asyncio.create_task(message.players.send('The draft has concluded! Type "!mypool" to see your cardpool! Good luck in your duels!'))
+
+    if ('!picklog') in message.content.lower():
+        #await message.author.send(PickLog)
+        for thing in PickLog:
+            logtosend+='%s\n' % thing
+        asyncio.create_task(message.author.send(file=discord.File(fp=StringIO(logtosend),filename="PickLog.csv")))    
 
 async def pick_timer():
     global players
