@@ -36,12 +36,32 @@ for name in cubeList:
     else:    
         #technically speaking, match could have multiple elements. We only ever expect it to have one.
         matchedCard = match[0]
-        #if we were given an alternate URL, we use that
-        imageUrl = matchedCard['card_images'][0]['image_url'] if len(nameComponents) == 1 else nameComponents[1]
+        #I could probably do this more elegantly if I knew, or bothered to learn, python
+        imageUrl = ""
+        cardId = ""
+        #were given an ID and an alt URL
+        if len(nameComponents) == 3:
+            imageUrl = nameComponents[1] if not nameComponents[1].isnumeric() else nameComponents[2]
+            cardId = nameComponents[1] if nameComponents[1].isnumeric() else nameComponents[2]
+        #were given an ID _or_ an alt URL    
+        elif len(nameComponents) == 2:
+            imageUrl = nameComponents[1] if not nameComponents[1].isnumeric() else matchedCard['card_images'][0]['image_url']
+            cardId = nameComponents[1] if nameComponents[1].isnumeric() else matchedCard['id']
+        #were given neither    
+        elif len(nameComponents) == 1:
+            imageUrl = matchedCard['card_images'][0]['image_url']
+            cardId = matchedCard['id']
+        #someone fucked up
+        else:
+            print('Could not find card ' + name.strip() + '. Malformatted input line.')
+            unidentifiedCards.append("Malformatted line => " + name)
+            continue        
         #Python string formatting is niceish
-        print('Name: %s | Id: %s | Type: %s | Image Link: %s \n' % (matchedCard['name'], matchedCard['id'], matchedCard['type'], imageUrl))
+        print('Name: %s | Id: %s | Type: %s | Image Link: %s \n' % (matchedCard['name'], cardId, matchedCard['type'], imageUrl))
         #set the URL of the object we want to export to JSON
         matchedCard['card_images'][0]['image_url'] = imageUrl
+        #set the ID of the object we want to export to JSON
+        matchedCard['id'] = cardId
         #add the card to the list of things we're gonna export
         cubeCards.append(matchedCard)
 
