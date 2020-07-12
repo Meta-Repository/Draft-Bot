@@ -33,12 +33,15 @@ async def on_ready():
 # not a fan of Python classes, but this is the implemetation I'm doing to allow for a list of just strings as well (for now)
 class CardInfo:
     #Left all but name as optional so that we can fall back if that's all we have. Definitely could have more properties in this class, just wanted a good starting point.
-    def __init__(self, name, id = -1, cardType="", description = "", imageUrl = ""):
+    def __init__(self, name, id = -1, cardType="", description = "", imageUrl = "", attribute = "", level = "", race = ""):
         self.name = name
         self.id = id
         self.cardType = cardType
         self.description = description
         self.imageUrl = imageUrl
+        self.attribute = attribute
+        self.level = level
+        self.race = race
     #We're just displaying names for now, but that can change. What these mean is that if you print a list of these, only their names will show.
     def __repr__(self):
         return self.name
@@ -54,7 +57,91 @@ def sortPack(pack):
     return monsters + spells + traps + extras
 
 
+#technically there's a LAUGH attribute too, but we don't fux with that
+attributes = ['DARK', 'DIVINE', 'EARTH', 'FIRE', 'LIGHT', 'WATER', 'WIND'] 
 
+#yes I know they're strings. It's all strings all the way down. Deal with it.
+levels = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+#thought there were way more than 25 of these
+monsterTypes = ['Aqua', 'Beast', 'Beast-Warrior', 'Creator God', 'Cyberse', 'Dinosaur', 'Divine-Beast', 'Dragon', 'Fairy', 'Fiend', 'Fish', 'Insect',
+'Machine', 'Plant', 'Psychic', 'Pyro', 'Reptile', 'Rock', 'Sea Serpent', 'Spellcaster', 'Thunder', 'Warrior', 'Winged Beast', 'Wyrm', 'Zombie']
+
+#may be comprehensive?
+cardTypes = ['Normal Monster', 'Gemini Monster', 'Effect Monster', 'Tuner Monster', 'Spell', 'Trap', 'Synchro', 'XYZ']
+
+
+def createAttributeDictionary(cardList):
+    #still do not understand globals
+    global attributes
+    #this feels jank
+    attributeDict = {} 
+    for attr in attributes:
+        #add an entry to our dictonary with the attribute name and count of cards with that attribute
+        attributeDict[attr] = len([card for card in cardList if card.attribute == attr])
+    #I did not understand this, now I do, and it is pretty clean
+    return {"**" + str(k) + "**": v for k, v in sorted(attributeDict.items(), key=lambda item: item[1], reverse=True) if v != 0}
+    
+def createTypeDictionary(cardList):
+    #still do not understand globals
+    global monsterTypes
+    #this feels jank
+    monsterTypeDict = {} 
+    for monsterType in monsterTypes:
+        #add an entry to our dictonary with the type name and count of cards with that type
+        monsterTypeDict[monsterType] = len([card for card in cardList if card.race == monsterType])
+    #I did not understand this, now I do, and it is pretty clean
+    return {"**" + str(k) + "**": v for k, v in sorted(monsterTypeDict.items(), key=lambda item: item[1], reverse=True) if v != 0}
+
+def createLevelDictionary(cardList):
+    #still do not understand globals
+    global levels
+    #this feels jank
+    levelDict = {} 
+    for level in levels:
+        #add an entry to our dictonary with the level and count of cards of that level (not in extra)
+        levelDict[level] = len([card for card in cardList if card.level == level and 'synchro' not in card.cardType.lower() and 'xyz' not in card.cardType.lower()])
+    #I did not understand this, now I do, and it is pretty clean
+    return {"**Level " + str(k) + "**": v for k, v in levelDict.items() if v != 0}
+
+def createTunerDictionary(cardList):
+    #still do not understand globals
+    global levels
+    #this feels jank
+    tunerDict = {} 
+    for level in levels:
+        #add an entry to our dictonary with the level and count of tuners with that level
+        tunerDict[level] = len([card for card in cardList if card.level == level and 'tuner' in card.cardType.lower() and 'synchro' not in card.cardType.lower()])
+    #I did not understand this, now I do, and it is pretty clean
+    return {"**Level " + str(k) + "**": v for k, v in tunerDict.items() if v != 0}
+
+def createExtraMessage(cardList):
+    #still do not understand globals
+    global levels
+    #this feels jank
+    syncDict = {} 
+    xyzDict = {} 
+    for level in levels:
+        #add an entry to our dictonary with the level and count of synchros with that level
+        syncDict[level] = len([card for card in cardList if card.level == level and 'synchro' in card.cardType.lower()])
+        #add an entry to our dictonary with the level and count of xyz with that level
+        xyzDict[level] = len([card for card in cardList if card.level == level and 'xyz' in card.cardType.lower()])
+    #I did not understand this, now I do, and it is pretty clean
+    syncLine = '__Synchros__ ' + str({"**Level " + str(k) + "**": v for k, v in syncDict.items() if v != 0})
+    xyzLine = '__XYZ__ ' + str({"**Rank " + str(k) + "**": v for k, v in xyzDict.items() if v != 0})
+    return syncLine + '\n' + xyzLine 
+
+#this one's just gonna have to get close enough
+def createSpreadDictionary(cardList):
+    #still do not understand globals
+    global cardTypes
+    #this feels jank
+    cardTypeDict = {} 
+    for cardType in cardTypes:
+        #add an entry to our dictonary with the level and count of cards with that card type
+        cardTypeDict[cardType] = len([card for card in cardList if cardType.lower() in card.cardType.lower()])
+    #I did not understand this, now I do, and it is pretty clean
+    return {"**" + str(k) + "**": v for k, v in cardTypeDict.items() if v != 0}
 
 CardList = []
 
@@ -69,7 +156,7 @@ def import_cube():
             cardDict = json.load(cubeFile)
             #Instantiate a new CardInfo object for each card in the list. Definitely could pull in more info from the JSON - there's a lot there.
             for card in cardDict:
-                CardList.append(CardInfo(card['name'], card['id'], card['type'], card['desc'], card['card_images'][0]['image_url']))
+                CardList.append(CardInfo(card['name'], card['id'], card['type'], card['desc'], card['card_images'][0]['image_url'], card.get('attribute'), card.get('level'), card.get('race')))
 
     else:
         print('Did not find cube list.')
@@ -139,7 +226,7 @@ def pick(user, cardIndex, workingPack, afk = False):
         pool.append([user.name, workingPack[cardIndex]]) #add card to pool
         workingPack.remove(workingPack[cardIndex]) #remove card from pack
         asyncio.create_task(user.send('Nice pick! It has been added to your pool. Type !mypool to view your entire cardpool.'))
-        PickLog.append([workingPack[cardIndex], len(workingPack), len(workingPack)])
+        #PickLog.append([workingPack[cardIndex], len(workingPack), len(workingPack)])
 
         if(afk and pickNumber == 14):
             asyncio.create_task(user.send('You have been removed from the draft due to inactivity.'))
@@ -227,6 +314,7 @@ async def on_message(message):
    
 
 
+
  #Sends first pack to all players
     if ('!!startdraft') in message.content.lower():
         if 'Admin' in str(message.author.roles): #Only admins can do this command
@@ -248,14 +336,56 @@ async def on_message(message):
         else:
             asyncio.create_task(message.channel.send('Only admins can start the draft'))
 
-       
+    if ('!cubemetric' in message.content.lower()):
+        if 'Admin' in str(message.author.roles): #Only admins can do this command
+            if ('attr' in message.content.lower()): 
+                asyncio.create_task(message.channel.send(createAttributeDictionary(CardList)))
+            elif ('type' in message.content.lower()):
+                asyncio.create_task(message.channel.send(createTypeDictionary(CardList)))
+            elif ('level' in message.content.lower()):
+                asyncio.create_task(message.channel.send(createLevelDictionary(CardList)))     
+            elif ('tuner' in message.content.lower()):
+                asyncio.create_task(message.channel.send(createTunerDictionary(CardList)))
+            elif ('extra' in message.content.lower()):
+                asyncio.create_task(message.channel.send(createExtraMessage(CardList)))
+            else:
+                asyncio.create_task(message.channel.send(createSpreadDictionary(CardList)))
 
-    if ('!mypool' in message.content.lower()):
+
+    if ('!mypool' in message.content.lower()):   
         temppool = []
         for word in pool:
             if message.author.name in word:
-                temppool.append(word[1].name)# + " : " + word[1].imageUrl) #could send any combination of card properties in any sort of format
-        asyncio.create_task(message.author.send(temppool))
+                temppool.append(word[1])
+
+        if ('attr' in message.content.lower()): 
+            asyncio.create_task(message.channel.send(createAttributeDictionary(temppool)))
+        elif ('type' in message.content.lower()):
+            asyncio.create_task(message.channel.send(createTypeDictionary(temppool)))
+        elif ('level' in message.content.lower()):
+            asyncio.create_task(message.channel.send(createLevelDictionary(temppool)))     
+        elif ('tuner' in message.content.lower()):
+            asyncio.create_task(message.channel.send(createTunerDictionary(temppool)))
+        elif ('extra' in message.content.lower()):
+            asyncio.create_task(message.channel.send(createExtraMessage(temppool)))
+        elif ('list' in message.content.lower()):
+            asyncio.create_task(message.author.send(temppool))
+        else:
+            monsters = [card for card in temppool if 'monster' in card.cardType.lower() and 'synchro' not in card.cardType.lower() and 'xyz' not in card.cardType.lower()]
+            if(len(monsters) > 0):
+                asyncio.create_task(message.channel.send("**Monsters (" + str(len(monsters)) + "):** " + str(monsters)))
+            spells = [card for card in temppool if 'spell' in card.cardType.lower()]
+            if(len(spells) > 0):
+                asyncio.create_task(message.channel.send("**Spells (" + str(len(spells)) + "):** " + str(spells)))        
+            traps = [card for card in temppool if 'trap' in card.cardType.lower()]
+            if(len(traps) > 0):
+                asyncio.create_task(message.channel.send("**Traps (" + str(len(traps)) + "):** " + str(traps)))
+            extra = [card for card in temppool if 'xyz' in card.cardType.lower() or 'synchro' in card.cardType.lower()]
+            if(len(extra) > 0):
+                asyncio.create_task(message.channel.send("**Extra Deck (" + str(len(extra)) + "):** " + str(extra)))
+
+
+       
         
 
     #Lists all cards in all pools and says who has each card. Could be useful for detecting cheating if necessary
@@ -345,9 +475,11 @@ async def on_message(message):
 
     if ('!picklog') in message.content.lower():
         #await message.author.send(PickLog)
-        for thing in PickLog:
-            logtosend+='%s\n' % thing
-        asyncio.create_task(message.author.send(file=discord.File(fp=StringIO(logtosend),filename="PickLog.csv")))    
+        if 'Admin' in str(message.author.roles): #Only admins can do this command   
+            for thing in PickLog:
+                logtosend+='%s\n' % thing
+            asyncio.create_task(message.author.send(file=discord.File(fp=StringIO(logtosend),filename="PickLog.csv")))    
+
 
 async def pick_timer():
     global players
