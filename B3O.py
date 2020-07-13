@@ -224,9 +224,10 @@ def pick(user, cardIndex, workingPack, afk = False):
             return  
 
         pool.append([user.name, workingPack[cardIndex]]) #add card to pool
+        PickLog.append([workingPack[cardIndex], len(workingPack), len(workingPack)])
         workingPack.remove(workingPack[cardIndex]) #remove card from pack
         asyncio.create_task(user.send('Nice pick! It has been added to your pool. Type !mypool to view your entire cardpool.'))
-        #PickLog.append([workingPack[cardIndex], len(workingPack), len(workingPack)])
+
 
         if(afk and pickNumber == 14):
             asyncio.create_task(user.send('You have been removed from the draft due to inactivity.'))
@@ -316,7 +317,7 @@ async def on_message(message):
 
 
  #Sends first pack to all players
-    if ('!!startdraft') in message.content.lower():
+    if ('!!stardraft') in message.content.lower():
         if 'Admin' in str(message.author.roles): #Only admins can do this command
             u = 1 #See !joindraft. Prevents people from signing up once draft has started
             asyncio.create_task(message.channel.send('The draft is starting! All players have received their first pack. Good luck!'))
@@ -474,11 +475,10 @@ async def on_message(message):
             asyncio.create_task(message.players.send('The draft has concluded! Type "!mypool" to see your cardpool! Good luck in your duels!'))
 
     if ('!picklog') in message.content.lower():
-        #await message.author.send(PickLog)
-        if 'Admin' in str(message.author.roles): #Only admins can do this command   
-            for thing in PickLog:
-                logtosend+='%s\n' % thing
-            asyncio.create_task(message.author.send(file=discord.File(fp=StringIO(logtosend),filename="PickLog.csv")))    
+        #await message.author.send(PickLog) 
+        for thing in PickLog:
+            logtosend+='%s\n' % thing
+        asyncio.create_task(message.author.send(file=discord.File(fp=StringIO(logtosend),filename="PickLog.csv")))    
 
 
 async def pick_timer():
