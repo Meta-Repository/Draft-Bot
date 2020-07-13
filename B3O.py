@@ -317,7 +317,7 @@ async def on_message(message):
 
 
  #Sends first pack to all players
-    if ('!!stardraft') in message.content.lower():
+    if ('!!startdraft') in message.content.lower():
         if 'Admin' in str(message.author.roles): #Only admins can do this command
             u = 1 #See !joindraft. Prevents people from signing up once draft has started
             asyncio.create_task(message.channel.send('The draft is starting! All players have received their first pack. Good luck!'))
