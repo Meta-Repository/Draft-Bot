@@ -17,9 +17,12 @@ client = discord.Client()
 from discord.ext import commands
 client = commands.Bot(command_prefix = 'B!')
 
+generalChannel = None
+
 #Connecting
 @client.event
 async def on_ready():
+    global generalChannel
     for guild in client.guilds:
         if guild.name == GuildName:
             break
@@ -28,6 +31,10 @@ async def on_ready():
         f'{client.user} is connected to the following guild:\n'
         f'{guild.name}(id: {guild.id})'
     )
+
+    generalChannel = client.get_channel(725951808585072702)
+
+
 
 
 # not a fan of Python classes, but this is the implemetation I'm doing to allow for a list of just strings as well (for now)
@@ -176,6 +183,7 @@ pickNumber = 0
 pooltosend = ""
 PickLog = []
 logtosend = ""
+draftDoneBeenFired = False #Fuck you and your shitty single letter variable names. Fix them, for fuck's sake. For all I know one of them serves this functionality already...
 
 reactions = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '0️⃣',
  '🇦', '🇧','🇨','🇩','🇪']
@@ -283,12 +291,18 @@ async def on_message(message):
     global u
     global PickLog
     global logtosend
+    global draftDoneBeenFired
     w = 0
     u = 0
     #printprint(message.content.lower())
     if message.author == client.user:
         return
  
+    # Useful for finding channel ids to 
+    # print(message.channel.name)
+    # print(message.channel.guild)
+    # print(message.channel.id)
+    # print('--------------------------')
 
  #Players - Sign up and check current players
 
@@ -298,14 +312,17 @@ async def on_message(message):
     #Registers the player
     if (('!joindraft') in message.content.lower() and packs == []) and (message.author not in players):
         #made it announce name - we might want to look into always sending this to the main server even if draft is joined in PM
-        if u == 0: #u becomes 1 once the draft has started. Prevents people from joining mid draft
-            asyncio.create_task(message.channel.send(message.author.name + ' has joined the draft!'))
+        if not draftDoneBeenFired: #I don't think the previous implementation worked and if it did it still used a shitty variable name
+            asyncio.create_task(generalChannel.send(message.author.name + ' has joined the draft!'))
             players.append(message.author)
             playernames.append(message.author.name)
+        else:
+            asyncio.create_task(message.channel.send("The draft has not been reset since it was last fired. Please join after it gets reset."))
+
     #de-registers a player
     if ('!leavedraft') in message.content.lower() and message.author in players:
-        if u == 0: #u becomes 1 once the draft has started. Prevents people from leaving mid draft
-            asyncio.create_task(message.channel.send('So sorry to see you leave, ' + message.author.name + '. Catch you for the next one!'))
+        if not draftDoneBeenFired: #I don't think the previous implementation worked and if it did it still used a shitty variable name
+            asyncio.create_task(generalChannel.send('So sorry to see you leave, ' + message.author.name + '. Catch you for the next one!'))
             players.remove(message.author)
             playernames.remove(message.author.name)
     #Sends the name of all registered players. Commented out has all the person's info (e.g. Discord ID)    
@@ -317,10 +334,12 @@ async def on_message(message):
 
 
  #Sends first pack to all players
+
     if ('!!startdraft') in message.content.lower():
-        if 'Admin' in str(message.author.roles): #Only admins can do this command
-            u = 1 #See !joindraft. Prevents people from signing up once draft has started
-            asyncio.create_task(message.channel.send('The draft is starting! All players have received their first pack. Good luck!'))
+        if 'Admin' in str(message.author.roles) or 'Moderator' in str(message.author.roles): #Only admins/mods can do this command
+            draftDoneBeenFired = True #See !joindraft. Prevents people from signing up once draft has started
+            # await channel.send('hello')
+            asyncio.create_task(generalChannel.send('The draft is starting! All players have received their first pack. Good luck!'))
             FullList = random.sample(CardList, len(players)*15)
             CardList = [q for q in CardList if q not in FullList] #Removes the cards from the full card list
 
@@ -335,7 +354,7 @@ async def on_message(message):
             
             asyncio.create_task(pick_timer())
         else:
-            asyncio.create_task(message.channel.send('Only admins can start the draft'))
+            asyncio.create_task(message.channel.send('Only admins or moderators can start the draft'))
 
     if ('!cubemetric' in message.content.lower()):
         if 'Admin' in str(message.author.roles): #Only admins can do this command
@@ -400,7 +419,7 @@ async def on_message(message):
     
     #Removes people from the draft. Does not use @. For example, !remove fspluver, not !remove @fspluver
     if message.content.lower().strip().startswith('!remove'):
-        if 'Admin' in str(message.author.roles): #Only admins can do this command
+        if 'Admin' in str(message.author.roles) or 'Moderator' in str(message.author.roles): #Only admins/mods can do this command
             y = 0
             for person in players: #This loop removes them from the players list            
                 if person.name in message.content:
@@ -411,10 +430,10 @@ async def on_message(message):
                     playernames.remove(person)
                     await message.channel.send(person + " has been removed from the draft.")
         else:           
-            await message.channel.send('Only admins can remove players from the draft. If you can no longer play, please let an admin know')
+            await message.channel.send('Only admins or moderators can remove players from the draft. If you yourself would like to leave, use !leavedraft.')
 
     if message.content.lower().strip().startswith('!reset'):
-        if 'Admin' in str(message.author.roles):
+        if 'Admin' in str(message.author.roles) or 'Moderator' in str(message.author.roles):
             pools = []
             pool = []
             players = []
@@ -425,6 +444,7 @@ async def on_message(message):
             x = 0
             t = 0
             u = 0
+            draftDoneBeenFired = False
             pickNumber = 0
             pooltosend = ""
             import_cube()
@@ -471,14 +491,15 @@ async def on_message(message):
         asyncio.create_task(message.author.send(file=discord.File(fp=StringIO(ydkString),filename="YourDraftPool.ydk")))
 
     if ('!draftdone') in message.content.lower():
-        if 'Admin' in str(message.author.roles): #Only admins can do this command
-            asyncio.create_task(message.players.send('The draft has concluded! Type "!mypool" to see your cardpool! Good luck in your duels!'))
+        if 'Admin' in str(message.author.roles) or 'Moderator' in str(message.author.roles): #Only admins/mods can do this command
+            asyncio.create_task(generalChannel.send('The draft has concluded! Type "!mypool" to see your cardpool, and !ydk to get an export of your list. Good luck in your duels!'))
 
     if ('!picklog') in message.content.lower():
-        #await message.author.send(PickLog) 
-        for thing in PickLog:
-            logtosend+='%s\n' % thing
-        asyncio.create_task(message.author.send(file=discord.File(fp=StringIO(logtosend),filename="PickLog.csv")))    
+        if 'Admin' in str(message.author.roles):
+            #await message.author.send(PickLog) 
+            for thing in PickLog:
+                logtosend+='%s\n' % thing
+            asyncio.create_task(message.author.send(file=discord.File(fp=StringIO(logtosend),filename="PickLog.csv")))    
 
 
 async def pick_timer():
