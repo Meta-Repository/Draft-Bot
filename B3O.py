@@ -1,33 +1,16 @@
 import discord
-import random
 import asyncio
 import json
 import os
-import imagemanipulator
 from io import StringIO
-
-# not a fan of Python classes, but this is the implemetation I'm doing to allow for a list of just strings as well (for now)
-class CardInfo:
-    #Left all but name as optional so that we can fall back if that's all we have. Definitely could have more properties in this class, just wanted a good starting point.
-    def __init__(self, name, id = -1, cardType="", description = "", imageUrl = "", attribute = "", level = "", race = ""):
-        self.name = name
-        self.id = id
-        self.cardType = cardType
-        self.description = description
-        self.imageUrl = imageUrl
-        self.attribute = attribute
-        self.level = level
-        self.race = race
-    #We're just displaying names for now, but that can change. What these mean is that if you print a list of these, only their names will show.
-    def __repr__(self):
-        return self.name
-    def __str__(self):
-        self.name
+from draft import Draft
+from draft import Player
+from cardInfo import cardJsonToCardInfo
+from draft import reactions
 
 #Constants:
 BotToken = "NzA3MzI0NjAxNDQ4NzkyMDY0.XrHJbw.mwn0yBiFMXRTBs2W93ePyWwcW64"
 client = discord.Client()
-
 #technically there's a LAUGH attribute too, but we don't fux with that
 attributes = ['DARK', 'DIVINE', 'EARTH', 'FIRE', 'LIGHT', 'WATER', 'WIND'] 
 #yes I know they're strings. It's all strings all the way down. Deal with it.
@@ -37,8 +20,6 @@ monsterTypes = ['Aqua', 'Beast', 'Beast-Warrior', 'Creator God', 'Cyberse', 'Din
 'Machine', 'Plant', 'Psychic', 'Pyro', 'Reptile', 'Rock', 'Sea Serpent', 'Spellcaster', 'Thunder', 'Warrior', 'Winged Beast', 'Wyrm', 'Zombie']
 #may be comprehensive?
 cardTypes = ['Normal Monster', 'Gemini Monster', 'Effect Monster', 'Tuner Monster', 'Spell', 'Trap', 'Synchro', 'XYZ']
-reactions = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '0️⃣',
- '🇦', '🇧','🇨','🇩','🇪']
 
 drafts = {}
 cubes = {}
@@ -55,19 +36,11 @@ def import_cubes():
             cardDict = json.load(cubeFile)
             #Instantiate a new CardInfo object for each card in the list. Definitely could pull in more info from the JSON - there's a lot there.
             for card in cardDict:
-                CardList.append(CardInfo(card['name'], card['id'], card['type'], card['desc'], card['card_images'][0]['image_url'], card.get('attribute'), card.get('level'), card.get('race')))
+                CardList.append(cardJsonToCardInfo(card))
         cubes[cub] = CardList
 
 import_cubes()
 print('Cubes imported')
-
-def sortPack(pack):
-    #this is going to be sloppy shit
-    monsters = [card for card in pack if 'monster' in card.cardType.lower() and ('synchro' not in card.cardType.lower() and 'xyz' not in card.cardType.lower())]
-    spells = [card for card in pack if 'spell' in card.cardType.lower()]
-    traps = [card for card in pack if 'trap' in card.cardType.lower()]
-    extras = [card for card in pack if 'xyz' in card.cardType.lower() or 'synchro' in card.cardType.lower()]
-    return monsters + spells + traps + extras
 
 def createAttributeDictionary(cardList):
     global attributes
@@ -123,135 +96,6 @@ def createSpreadDictionary(cardList):
         cardTypeDict[cardType] = len([card for card in cardList if cardType.lower() in card.cardType.lower()])
     return {"**" + str(k) + "**": v for k, v in cardTypeDict.items() if v != 0}
 
-
-async def add_reactions(message, emojis):
-    for emoji in emojis:
-        asyncio.create_task(message.add_reaction(emoji))
-
-#This exists to allow making the pack messages async.
-async def send_pack_message(text, player, pack):
-    asyncio.create_task(add_reactions(await player.user.send(content=text, file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg")), reactions[:len(pack)]))
-
-#Stores their pool of picked cards and discord user. Store within drafts.
-class Player:
-
-    def hasPicked(self):
-        return not (len(self.pack) + self.draft.currentPick == 16)
-
-    def pick(self, cardIndex):
-        #Checking if the card is in the pack.
-        if cardIndex <= (len(self.pack) - 1):
-            #Making sure they havent already picked
-            if not self.hasPicked():
-                asyncio.create_task(self.user.send('You have picked ' + self.pack[cardIndex].name + '.'))
-                self.pool.append(self.pack[cardIndex])
-                self.pack.pop(cardIndex)
-                self.draft.checkPacks()
-
-    def __init__(self, user, draft, pack = None, pool=[],):
-        self.draft = draft
-        self.pack = pack
-        self.pool = pool
-        self.user = user
-    
-    def __repr__(self):
-        return self.user
-
-class Timer:
-
-    async def start(self):
-        self.legnth -= (8 * (self.draft.currentPick - 1))
-        #A little bit of psych here. Tell them there is shorter left to pick than there really is.
-        await asyncio.sleep(self.legnth - 12)
-        #Return if this thread is now a outdated and no longer needed timer.
-        if self != self.draft.timer:
-            return
-        for player in self.draft.players:
-            if not player.hasPicked():
-                asyncio.create_task(player.user.send('Hurry! Only ten seconds left to pick!'))
-        await asyncio.sleep(12)
-        if self != self.draft.timer:
-            return
-        for player in self.draft.players:
-            if not player.hasPicked():
-                if self.draft.currentPick == 15:
-                    asyncio.create_task(player.user.send('Ran out of time. You have been kicked for missing the final pick in a pack.'))
-                    self.draft.kick(player)
-                else:
-                    asyncio.create_task(player.user.send('Ran out of time. Automatically picked the first card in the pack.'))
-                    player.pick(0)
-
-    def __init__(self, draft, legnth=15):
-        self.legnth = legnth
-        self.draft = draft
-        asyncio.create_task(self.start())
-
-class Draft:
-    #cube: The cube the pool was created from
-    #pool: The cards remaining to be picked from
-    #players: The players in the draft. Player class.
-    #channel: The channel the draft was started from
-    #timer: The timer tracking the picks. Reassign every pick.
-    def __init__(self, cube, channel, players = []):
-        self.cube = cube
-        self.pool = cube
-        self.players = players
-        self.channel = channel
-        self.timer = None
-        self.currentPick = -1
-        self.currentPack = 0
-
-    def newPacks(self):
-        self.currentPick = 1
-        self.currentPack += 1
-        self.timer = Timer(self) #resets the timer
-        self.players.reverse()
-
-        FullList = random.sample(self.pool, len(self.players)*15)
-        self.pool = [q for q in self.pool if q not in FullList] #Removes the cards from the full card list
-
-        i = 0 #For pulling cards from the full list into packs
-        for player in self.players:
-            pack = sortPack(FullList[i:i+15])
-            player.pack = pack #Holds the packs
-            i = i+15
-            #splices reactions into pack
-            packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, pack)] 
-            asyncio.create_task(send_pack_message("Here's your #" + str(self.currentPack) + " pack! React to select a card. Happy drafting!\n"+str(packWithReactions), player, pack))
-        
-    def rotatePacks(self):
-        self.currentPick += 1
-        self.timer = Timer(self) #resets the timer
-
-        #Creates a list of all the packs
-        packs = [player.pack for player in self.players]
-        for player in self.players:
-            #Gives the player the next pack in the list. If that would be out of bounds give them the first pack.
-            player.pack = packs[0] if (packs.index(player.pack) + 1) >= len(packs) else packs[packs.index(player.pack) + 1]
-            #splices reactions into pack
-            packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, player.pack)] 
-            asyncio.create_task(send_pack_message('Your next pack: \n\n'+str(packWithReactions), player, player.pack))
-    
-    #Decides if its time to rotate or send a new pack yet.
-    def checkPacks(self):
-        #Checks if every player has picked.
-        if len([player for player in self.players if not player.hasPicked()]) == 0:
-            if self.currentPick < 15:
-                self.rotatePacks()
-            elif self.currentPack >= 4:
-                for player in self.players:
-                    player.user.send('The draft is now finished. Use !ydk or !mypool to get started on deckbuilding. Your draft organizer should be posting a bracket soon.')
-            else:
-                self.newPacks()
-    
-    def startDraft(self):
-        self.newPacks()
-
-    def kick(self, player):
-        #A little worried about how we currently call this from the seperate timer thread from all the other main logic.
-        #Drops the players pack into the void currently. 
-        self.players.remove(player)
-
 #Welcomes people who join the server
 @client.event
 async def on_member_join(member):
@@ -271,6 +115,7 @@ async def on_reaction_add(reaction, user):
     for draft in drafts:
         for player in drafts[draft].players:
             if user == player.user:
+                    #100 used as a value thats larger than anything we use, so pick will ignore it.
                     cardIndex = reactions.index(str(reaction)) if str(reaction) in reactions else 100
                     player.pick(cardIndex)
 
@@ -310,8 +155,12 @@ async def on_message(message):
 
     if ('!!createdraft') in message.content.lower():
         if 'Admin' in str(message.author.roles) or 'Moderator' in str(message.author.roles): #Only admins/mods can do this command
-            drafts[message.channel] = Draft(list(cubes.values())[0], message.channel)
-
+            for key in cubes.keys():
+                if len(message.content.lower().split()) > 1 and key == message.content.lower().split()[1]:
+                    drafts[message.channel] = Draft(cubes[key], message.channel)
+                    return
+            await message.channel.send('Cube not found, please enter one from this list list next time:\n' + str(list(cubes.keys())))
+            
     if ('!!startdraft') in message.content.lower():
         if 'Admin' in str(message.author.roles) or 'Moderator' in str(message.author.roles): #Only admins/mods can do this command
             #Confirms there is a unstarted draft in the channel.
@@ -370,15 +219,18 @@ async def on_message(message):
                         if(len(extra) > 0):
                             asyncio.create_task(message.channel.send("**Extra Deck (" + str(len(extra)) + "):** " + str(extra)))
 
-    #TODO: Need to rework
     #Lists all cards in all pools and says who has each card. Could be useful for detecting cheating if necessary
-    # if ('!totalpool') in message.content.lower():
-    #     if 'Admin' in str(message.author.roles): #Only admins can do this command
-    #         for thing in pool:
-    #             pooltosend+='%s\n' % thing
-    #         asyncio.create_task(message.author.send(file=discord.File(fp=StringIO(pooltosend),filename="OverallPool.ydk")))
-    #     else:
-    #         asyncio.create_task(message.channel.send('Admins only'))
+    if ('!totalpool') in message.content.lower():
+        if 'Admin' in str(message.author.roles): #Only admins can do this command
+            pooltosend = ''
+            for draft in drafts:
+                for player in drafts[draft].players:
+                    pooltosend += '\n\n' + player.user.name
+                    for thing in player.pool:
+                        pooltosend +='%s\n' % thing
+            asyncio.create_task(message.author.send(file=discord.File(fp=StringIO(pooltosend),filename="OverallPool.ydk")))
+        else:
+            asyncio.create_task(message.channel.send('Admins only'))
     
     #Removes people from the draft. Does not use @. For example, !remove fspluver, not !remove @fspluver
     if message.content.lower().strip().startswith('!remove'):
