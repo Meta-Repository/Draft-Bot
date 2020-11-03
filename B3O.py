@@ -148,7 +148,7 @@ async def add_reactions(message, emojis):
 
 #This exists to allow making the pack messages async.
 async def send_pack_message(text, player, pack):
-    asyncio.create_task(add_reactions(await player.send(content=text, file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg")), reactions[:len(pack)]))
+    asyncio.create_task(add_reactions(await player.user.send(content=text, file=discord.File(fp=imagemanipulator.create_pack_image(pack),filename="image.jpg")), reactions[:len(pack)]))
 
 #Stores their pool of picked cards and discord user. Store within drafts.
 class Player:
@@ -233,7 +233,7 @@ class Draft:
     def checkPacks(self):
         #Checks if every player has picked.
         if len([player for player in self.players if len(player.pack) + player.draft.currentPick == 16]) == 0:
-            if self.currentPick <= 15:
+            if self.currentPick < 15:
                 self.rotatePacks()
             elif self.currentPack >= 4:
                 print('TODO FINISH THIS')
@@ -261,7 +261,7 @@ async def on_reaction_add(reaction, user):
         return    
 
     for draft in drafts:
-        for player in draft.players:
+        for player in drafts[draft].players:
             if user == player.user:
                     cardIndex = reactions.index(str(reaction)) if str(reaction) in reactions else 100
                     player.pick(cardIndex)
@@ -289,9 +289,9 @@ async def on_message(message):
         #Might want to split that up for serpeate error messages for the user.
         if message.channel in drafts and drafts[message.channel].currentPack == 0 and message.author not in [player.user for player in drafts[message.channel].players]:
             drafts[message.channel].players.append(Player(message.author, drafts[message.channel]))
-            message.channel.send(message.author.name + ' has joined the draft!')
+            await message.channel.send(message.author.name + ' has joined the draft!')
         else:
-           message.channel.send("The draft has not been reset since it was last fired. Please join after it gets reset.")
+           await message.channel.send("The draft has not been reset since it was last fired. Please join after it gets reset.")
 
     #de-registers a player
     if ('!leavedraft') in message.content.lower():
@@ -299,27 +299,27 @@ async def on_message(message):
             for player in drafts[message.channel].players:
                 if message.author == player.user:
                     drafts[message.channel].players.remove(player)
-                    message.channel.send('So sorry to see you leave, ' + message.author.name + '. Catch you for the next one!')
+                    await message.channel.send('So sorry to see you leave, ' + message.author.name + '. Catch you for the next one!')
 
     #Sends the name of all registered players.
     if ('!currentplayers') in message.content.lower():
         if message.channel in drafts:
-            message.channel.send([player.user.name for player in drafts[message.channel].players])
+            await message.channel.send([player.user.name for player in drafts[message.channel].players])
         else:
-            message.channel.send('There is no draft in this channel currently.')
+            await message.channel.send('There is no draft in this channel currently.')
 
     if ('!!createdraft') in message.content.lower():
         if 'Admin' in str(message.author.roles) or 'Moderator' in str(message.author.roles): #Only admins/mods can do this command
-            drafts[message.channel] = Draft(cubes.values()[0], message.channel)
+            drafts[message.channel] = Draft(list(cubes.values())[0], message.channel)
 
     if ('!!startdraft') in message.content.lower():
         if 'Admin' in str(message.author.roles) or 'Moderator' in str(message.author.roles): #Only admins/mods can do this command
             #Confirms there is a unstarted draft in the channel.
             if message.channel in drafts and drafts[message.channel].currentPack == 0:
-                message.channel.send('The draft is starting! All players have received their first pack. Good luck!')
-                drafts[message.channel].start()
+                await message.channel.send('The draft is starting! All players have received their first pack. Good luck!')
+                drafts[message.channel].startDraft()
         else:
-            message.channel.send('Only admins or moderators can start the draft')
+            await message.channel.send('Only admins or moderators can start the draft')
 
     #TODO: Low priority to get this up to date.
     # if ('!cubemetric' in message.content.lower()):
@@ -340,21 +340,21 @@ async def on_message(message):
 
     if ('!mypool' in message.content.lower()):
         for draft in drafts:
-            for player in draft.players:
+            for player in drafts[draft].players:
                 if player.user == message.author:
                     temppool = player.pool[:]
                     if ('attr' in message.content.lower()): 
-                        message.channel.send(createAttributeDictionary(temppool))
+                        await message.channel.send(createAttributeDictionary(temppool))
                     elif ('type' in message.content.lower()):
-                        message.channel.send(createTypeDictionary(temppool))
+                        await message.channel.send(createTypeDictionary(temppool))
                     elif ('level' in message.content.lower()):
-                        message.channel.send(createLevelDictionary(temppool))
+                        await message.channel.send(createLevelDictionary(temppool))
                     elif ('tuner' in message.content.lower()):
-                        message.channel.send(createTunerDictionary(temppool))
+                        await message.channel.send(createTunerDictionary(temppool))
                     elif ('extra' in message.content.lower()):
-                        message.channel.send(createExtraMessage(temppool))
+                        await message.channel.send(createExtraMessage(temppool))
                     elif ('list' in message.content.lower()):
-                        message.author.send(temppool)
+                        await message.author.send(temppool)
                     else:
                         monsters = [card for card in temppool if 'monster' in card.cardType.lower() and 'synchro' not in card.cardType.lower() and 'xyz' not in card.cardType.lower()]
                         if(len(monsters) > 0):
@@ -393,49 +393,50 @@ async def on_message(message):
         if 'Admin' in str(message.author.roles) or 'Moderator' in str(message.author.roles):
             drafts = {}
             import_cubes()
-            message.channel.send('Bot reset.')
+            await message.channel.send('Bot reset.')
 
 
     if ('!ydk' in message.content.lower()):
-        for player in drafts[message.channel].players:
-            if player.user.name in message.content:
-                tempidpoolnoextra = []
-                tempidpoolextra = []
-                tempidpoolside = []
-                r = 0 #Not 100% sure what "r" is supposed to mean here. But this variable is used for the extra deck overflow counter.
+        for draft in drafts:
+            for player in drafts[draft].players:
+                if player.user == message.author:
+                    tempidpoolnoextra = []
+                    tempidpoolextra = []
+                    tempidpoolside = []
+                    r = 0 #Not 100% sure what "r" is supposed to mean here. But this variable is used for the extra deck overflow counter.
 
-                for card in player.pool:
-                    if (card.cardType != ("Synchro Monster") or ("Synchro Tuner Monster")) and (card.cardType != "XYZ Monster"):                
-                        tempidpoolnoextra.append(card.id) #puts the ids of the main deck cards in a list
-                    if ('xyz' in card.cardType.lower() or 'synchro' in card.cardType.lower() and (r < 14)):
-                        tempidpoolextra.append(card.id) #puts the ids of the extra deck cards in a list
-                        r = r + 1
-                    if ('xyz' in card.cardType.lower() or 'synchro' in card.cardType.lower()) and (r > 13):
-                        tempidpoolside.append(card.id) #puts the ids of the extra deck cards in an overflow side list
+                    for card in player.pool:
+                        if (card.cardType != ("Synchro Monster") or ("Synchro Tuner Monster")) and (card.cardType != "XYZ Monster"):                
+                            tempidpoolnoextra.append(card.id) #puts the ids of the main deck cards in a list
+                        if ('xyz' in card.cardType.lower() or 'synchro' in card.cardType.lower() and (r < 14)):
+                            tempidpoolextra.append(card.id) #puts the ids of the extra deck cards in a list
+                            r = r + 1
+                        if ('xyz' in card.cardType.lower() or 'synchro' in card.cardType.lower()) and (r > 13):
+                            tempidpoolside.append(card.id) #puts the ids of the extra deck cards in an overflow side list
 
-                #This whole block formats their cards for the .ydk format
-                ydkString = ""
-                ydkstuff = ["#created by ...", "#main"]
-                for listitem in ydkstuff: #puts in the necessary ydk stuff
-                    ydkString+='%s\n' % listitem
-                for listitem in tempidpoolnoextra:
-                    ydkString+=('%s\n' % listitem) #should put main deck cards in the ydk file
-                ydkextraline = ["#extra"]
-                for listitem in ydkextraline: #Stuff after this gets put in the extra deck (until side)
-                    ydkString+='%s\n' % listitem
-                for listitem in tempidpoolextra:
-                    ydkString+='%s\n' % listitem
-                ydksidestuff = ["!side"] #Stuff after this gets put in the side
-                for listitem in ydksidestuff:
-                    ydkString+='%s\n' % listitem           
-                for listitem in tempidpoolside:
-                    ydkString+='%s\n' % listitem
+                    #This whole block formats their cards for the .ydk format
+                    ydkString = ""
+                    ydkstuff = ["#created by ...", "#main"]
+                    for listitem in ydkstuff: #puts in the necessary ydk stuff
+                        ydkString+='%s\n' % listitem
+                    for listitem in tempidpoolnoextra:
+                        ydkString+=('%s\n' % listitem) #should put main deck cards in the ydk file
+                    ydkextraline = ["#extra"]
+                    for listitem in ydkextraline: #Stuff after this gets put in the extra deck (until side)
+                        ydkString+='%s\n' % listitem
+                    for listitem in tempidpoolextra:
+                        ydkString+='%s\n' % listitem
+                    ydksidestuff = ["!side"] #Stuff after this gets put in the side
+                    for listitem in ydksidestuff:
+                        ydkString+='%s\n' % listitem           
+                    for listitem in tempidpoolside:
+                        ydkString+='%s\n' % listitem
 
-                asyncio.create_task(message.author.send(file=discord.File(fp=StringIO(ydkString),filename="YourDraftPool.ydk")))
+                    asyncio.create_task(message.author.send(file=discord.File(fp=StringIO(ydkString),filename="YourDraftPool.ydk")))
 
     if ('!draftdone') in message.content.lower():
         if 'Admin' in str(message.author.roles) or 'Moderator' in str(message.author.roles): #Only admins/mods can do this command
-            message.channel.send('The draft has concluded! Type "!mypool" to see your cardpool, and !ydk to get an export of your list. Good luck in your duels!')
+            await message.channel.send('The draft has concluded! Type "!mypool" to see your cardpool, and !ydk to get an export of your list. Good luck in your duels!')
 
     #TODO: Low priority. Fix this later.
     # if ('!picklog') in message.content.lower():
