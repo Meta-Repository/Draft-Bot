@@ -70,53 +70,39 @@ def sortPack(pack):
     return monsters + spells + traps + extras
 
 def createAttributeDictionary(cardList):
-    #still do not understand globals
     global attributes
-    #this feels jank
     attributeDict = {} 
     for attr in attributes:
         #add an entry to our dictonary with the attribute name and count of cards with that attribute
         attributeDict[attr] = len([card for card in cardList if card.attribute == attr])
-    #I did not understand this, now I do, and it is pretty clean
     return {"**" + str(k) + "**": v for k, v in sorted(attributeDict.items(), key=lambda item: item[1], reverse=True) if v != 0}
     
 def createTypeDictionary(cardList):
-    #still do not understand globals
     global monsterTypes
-    #this feels jank
     monsterTypeDict = {} 
     for monsterType in monsterTypes:
         #add an entry to our dictonary with the type name and count of cards with that type
         monsterTypeDict[monsterType] = len([card for card in cardList if card.race == monsterType])
-    #I did not understand this, now I do, and it is pretty clean
     return {"**" + str(k) + "**": v for k, v in sorted(monsterTypeDict.items(), key=lambda item: item[1], reverse=True) if v != 0}
 
 def createLevelDictionary(cardList):
-    #still do not understand globals
     global levels
-    #this feels jank
     levelDict = {} 
     for level in levels:
         #add an entry to our dictonary with the level and count of cards of that level (not in extra)
         levelDict[level] = len([card for card in cardList if card.level == level and 'synchro' not in card.cardType.lower() and 'xyz' not in card.cardType.lower()])
-    #I did not understand this, now I do, and it is pretty clean
     return {"**Level " + str(k) + "**": v for k, v in levelDict.items() if v != 0}
 
 def createTunerDictionary(cardList):
-    #still do not understand globals
     global levels
-    #this feels jank
     tunerDict = {} 
     for level in levels:
         #add an entry to our dictonary with the level and count of tuners with that level
         tunerDict[level] = len([card for card in cardList if card.level == level and 'tuner' in card.cardType.lower() and 'synchro' not in card.cardType.lower()])
-    #I did not understand this, now I do, and it is pretty clean
     return {"**Level " + str(k) + "**": v for k, v in tunerDict.items() if v != 0}
 
 def createExtraMessage(cardList):
-    #still do not understand globals
     global levels
-    #this feels jank
     syncDict = {} 
     xyzDict = {} 
     for level in levels:
@@ -124,21 +110,17 @@ def createExtraMessage(cardList):
         syncDict[level] = len([card for card in cardList if card.level == level and 'synchro' in card.cardType.lower()])
         #add an entry to our dictonary with the level and count of xyz with that level
         xyzDict[level] = len([card for card in cardList if card.level == level and 'xyz' in card.cardType.lower()])
-    #I did not understand this, now I do, and it is pretty clean
     syncLine = '__Synchros__ ' + str({"**Level " + str(k) + "**": v for k, v in syncDict.items() if v != 0})
     xyzLine = '__XYZ__ ' + str({"**Rank " + str(k) + "**": v for k, v in xyzDict.items() if v != 0})
     return syncLine + '\n' + xyzLine 
 
 #this one's just gonna have to get close enough
 def createSpreadDictionary(cardList):
-    #still do not understand globals
     global cardTypes
-    #this feels jank
     cardTypeDict = {} 
     for cardType in cardTypes:
         #add an entry to our dictonary with the level and count of cards with that card type
         cardTypeDict[cardType] = len([card for card in cardList if cardType.lower() in card.cardType.lower()])
-    #I did not understand this, now I do, and it is pretty clean
     return {"**" + str(k) + "**": v for k, v in cardTypeDict.items() if v != 0}
 
 
@@ -153,11 +135,15 @@ async def send_pack_message(text, player, pack):
 #Stores their pool of picked cards and discord user. Store within drafts.
 class Player:
 
+    def hasPicked(self):
+        return not (len(self.pack) + self.draft.currentPick == 16)
+
     def pick(self, cardIndex):
         #Checking if the card is in the pack.
         if cardIndex <= (len(self.pack) - 1):
             #Making sure they havent already picked
-            if len(self.pack) + self.draft.currentPick == 16:
+            if not self.hasPicked():
+                asyncio.create_task(self.user.send('You have picked ' + self.pack[cardIndex].name + '.'))
                 self.pool.append(self.pack[cardIndex])
                 self.pack.pop(cardIndex)
                 self.draft.checkPacks()
@@ -173,15 +159,32 @@ class Player:
 
 class Timer:
 
-    def start(self):
-        #Assures that we havent gone onto the next pick in the draft.
-        if self == self.draft.timer:
-            print("DO TIMER")
+    async def start(self):
+        self.legnth -= (8 * (self.draft.currentPick - 1))
+        #A little bit of psych here. Tell them there is shorter left to pick than there really is.
+        await asyncio.sleep(self.legnth - 12)
+        #Return if this thread is now a outdated and no longer needed timer.
+        if self != self.draft.timer:
+            return
+        for player in self.draft.players:
+            if not player.hasPicked():
+                asyncio.create_task(player.user.send('Hurry! Only ten seconds left to pick!'))
+        await asyncio.sleep(12)
+        if self != self.draft.timer:
+            return
+        for player in self.draft.players:
+            if not player.hasPicked():
+                if self.draft.currentPick == 15:
+                    asyncio.create_task(player.user.send('Ran out of time. You have been kicked for missing the final pick in a pack.'))
+                    self.draft.kick(player)
+                else:
+                    asyncio.create_task(player.user.send('Ran out of time. Automatically picked the first card in the pack.'))
+                    player.pick(0)
 
-    def __init__(self, draft, legnth=180):
+    def __init__(self, draft, legnth=15):
         self.legnth = legnth
         self.draft = draft
-        self.start()
+        asyncio.create_task(self.start())
 
 class Draft:
     #cube: The cube the pool was created from
@@ -214,7 +217,7 @@ class Draft:
             i = i+15
             #splices reactions into pack
             packWithReactions = [a + ': ' + b.name for a, b in zip(reactions, pack)] 
-            asyncio.create_task(send_pack_message("Here's your first pack! React to select a card. Happy drafting!\n"+str(packWithReactions), player, pack))
+            asyncio.create_task(send_pack_message("Here's your #" + str(self.currentPack) + " pack! React to select a card. Happy drafting!\n"+str(packWithReactions), player, pack))
         
     def rotatePacks(self):
         self.currentPick += 1
@@ -232,17 +235,22 @@ class Draft:
     #Decides if its time to rotate or send a new pack yet.
     def checkPacks(self):
         #Checks if every player has picked.
-        if len([player for player in self.players if len(player.pack) + player.draft.currentPick == 16]) == 0:
+        if len([player for player in self.players if not player.hasPicked()]) == 0:
             if self.currentPick < 15:
                 self.rotatePacks()
             elif self.currentPack >= 4:
-                print('TODO FINISH THIS')
-                #Finish draft
+                for player in self.players:
+                    player.user.send('The draft is now finished. Use !ydk or !mypool to get started on deckbuilding. Your draft organizer should be posting a bracket soon.')
             else:
                 self.newPacks()
     
     def startDraft(self):
         self.newPacks()
+
+    def kick(self, player):
+        #A little worried about how we currently call this from the seperate timer thread from all the other main logic.
+        #Drops the players pack into the void currently. 
+        self.players.remove(player)
 
 #Welcomes people who join the server
 @client.event
@@ -275,14 +283,6 @@ async def on_message(message):
     #Ignores the bots own messages.
     if message.author == client.user:
         return
- 
-    # Useful for finding channel ids to 
-    # print(message.channel.name)
-    # print(message.channel.guild)
-    # print(message.channel.id)
-    # print('--------------------------')
-
- #Players - Sign up and check current players
 
     if '!joindraft' in message.content.lower():
         #Makes sure there is both a draft in this channel, that draft hasnt started yet, and that the player isnt already in it.
@@ -446,24 +446,6 @@ async def on_message(message):
     #             logtosend+='%s\n' % thing
     #         asyncio.create_task(message.author.send(file=discord.File(fp=StringIO(logtosend),filename="PickLog.csv")))    
 
-#Need to transfer this logic into the draft class. Its pretty buggy atm, should probably just be redone completely.
-# async def pick_timer():
-#     global players
-#     global packs
-#     global pickNumber
-    
-#     timer = 140 - (8 * pickNumber)
-#     intialPickNumber = pickNumber
-#     await asyncio.sleep(timer - 10)
-#     unpickedPlayers = (x for x in players if len(packs[players.index(x)]) == 15 - intialPickNumber)
-#     for unpickedPlayer in unpickedPlayers:
-#         asyncio.create_task(unpickedPlayer.send('Only 10 seconds left to pick!'))
-#     await asyncio.sleep(10)
-#     unpickedPlayers = (x for x in players if len(packs[players.index(x)]) == 15 - intialPickNumber)
-#     for unpickedPlayer in unpickedPlayers:
-#         asyncio.create_task(unpickedPlayer.send('You automatically picked the first card.'))
-#         pick(unpickedPlayer, 0, packs[players.index(unpickedPlayer)], True)
-
 #Connecting
 @client.event
 async def on_ready():
@@ -474,8 +456,3 @@ async def on_ready():
         )
 
 client.run(BotToken)
-
-
-
-
-
