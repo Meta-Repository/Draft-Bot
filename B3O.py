@@ -159,7 +159,7 @@ async def on_message(message):
                 if len(message.content.lower().split()) > 1 and key == message.content.lower().split()[1]:
                     drafts[message.channel] = Draft(cubes[key], message.channel)
                     return
-            await message.channel.send('Cube not found, please enter one from this list list next time:\n' + str(list(cubes.keys())))
+            await message.channel.send('Cube not found, please enter one from this list next time:\n' + str(list(cubes.keys())))
             
     if ('!!startdraft') in message.content.lower():
         if 'Admin' in str(message.author.roles) or 'Moderator' in str(message.author.roles): #Only admins/mods can do this command
@@ -170,21 +170,25 @@ async def on_message(message):
         else:
             await message.channel.send('Only admins or moderators can start the draft')
 
-    #TODO: Low priority to get this up to date.
-    # if ('!cubemetric' in message.content.lower()):
-    #     if 'Admin' in str(message.author.roles): #Only admins can do this command
-    #         if ('attr' in message.content.lower()): 
-    #             asyncio.create_task(message.channel.send(createAttributeDictionary(CardList)))
-    #         elif ('type' in message.content.lower()):
-    #             asyncio.create_task(message.channel.send(createTypeDictionary(CardList)))
-    #         elif ('level' in message.content.lower()):
-    #             asyncio.create_task(message.channel.send(createLevelDictionary(CardList)))     
-    #         elif ('tuner' in message.content.lower()):
-    #             asyncio.create_task(message.channel.send(createTunerDictionary(CardList)))
-    #         elif ('extra' in message.content.lower()):
-    #             asyncio.create_task(message.channel.send(createExtraMessage(CardList)))
-    #         else:
-    #             asyncio.create_task(message.channel.send(createSpreadDictionary(CardList)))
+    if ('!cubemetric' in message.content.lower()):
+        if 'Admin' in str(message.author.roles): #Only admins can do this command
+            for key in cubes.keys():
+                if len(message.content.lower().split()) > 1 and key == message.content.lower().split()[1]:
+                    CardList = cubes[key]
+                    if ('attr' in message.content.lower()): 
+                        asyncio.create_task(message.channel.send(createAttributeDictionary(CardList)))
+                    elif ('type' in message.content.lower()):
+                        asyncio.create_task(message.channel.send(createTypeDictionary(CardList)))
+                    elif ('level' in message.content.lower()):
+                        asyncio.create_task(message.channel.send(createLevelDictionary(CardList)))     
+                    elif ('tuner' in message.content.lower()):
+                        asyncio.create_task(message.channel.send(createTunerDictionary(CardList)))
+                    elif ('extra' in message.content.lower()):
+                        asyncio.create_task(message.channel.send(createExtraMessage(CardList)))
+                    else:
+                        asyncio.create_task(message.channel.send(createSpreadDictionary(CardList)))
+                    return
+            await message.channel.send('Cube not found, please enter one from this list next time:\n' + str(list(cubes.keys())))
 
 
     if ('!mypool' in message.content.lower()):
