@@ -9,7 +9,7 @@ imageHeight = 614
 def create_pack_image(pack):
     images = []
     for card in pack:
-        images.append(Image.open(BytesIO(imagemanager.get_image(card.id))))
+        images.append(Image.open(BytesIO(imagemanager.get_image(card))))
     #Displays up to 15 cards
     image = Image.new("RGB", (imageWidth*5,imageHeight*3))
     for y in range(0,imageHeight*3,imageHeight):
