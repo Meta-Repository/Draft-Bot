@@ -5,12 +5,13 @@ import os
 from io import StringIO
 from draft import Draft
 from draft import Player
-from cardInfo import cardJsonToCardInfo
+import cardInfo
 from draft import reactions
 
 #Constants:
 BotToken = "NzA3MzI0NjAxNDQ4NzkyMDY0.XrHJbw.mwn0yBiFMXRTBs2W93ePyWwcW64"
 client = discord.Client()
+
 #technically there's a LAUGH attribute too, but we don't fux with that
 attributes = ['DARK', 'DIVINE', 'EARTH', 'FIRE', 'LIGHT', 'WATER', 'WIND'] 
 #yes I know they're strings. It's all strings all the way down. Deal with it.
@@ -36,7 +37,7 @@ def import_cubes():
             cardDict = json.load(cubeFile)
             #Instantiate a new CardInfo object for each card in the list. Definitely could pull in more info from the JSON - there's a lot there.
             for card in cardDict:
-                CardList.append(cardJsonToCardInfo(card))
+                CardList.append(cardInfo.cardJsonToCardInfo(card))
         cubes[cub] = CardList
 
 import_cubes()
@@ -259,15 +260,15 @@ async def on_message(message):
                     tempidpoolnoextra = []
                     tempidpoolextra = []
                     tempidpoolside = []
-                    r = 0 #Not 100% sure what "r" is supposed to mean here. But this variable is used for the extra deck overflow counter.
+                    overflow_counter = 0
 
                     for card in player.pool:
                         if (card.cardType != ("Synchro Monster") or ("Synchro Tuner Monster")) and (card.cardType != "XYZ Monster"):                
                             tempidpoolnoextra.append(card.id) #puts the ids of the main deck cards in a list
-                        if ('xyz' in card.cardType.lower() or 'synchro' in card.cardType.lower() and (r < 14)):
+                        if ('xyz' in card.cardType.lower() or 'synchro' in card.cardType.lower() and (overflow_counter < 14)):
                             tempidpoolextra.append(card.id) #puts the ids of the extra deck cards in a list
-                            r = r + 1
-                        if ('xyz' in card.cardType.lower() or 'synchro' in card.cardType.lower()) and (r > 13):
+                            overflow_counter = overflow_counter + 1
+                        if ('xyz' in card.cardType.lower() or 'synchro' in card.cardType.lower()) and (overflow_counter > 13):
                             tempidpoolside.append(card.id) #puts the ids of the extra deck cards in an overflow side list
 
                     #This whole block formats their cards for the .ydk format

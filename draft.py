@@ -128,7 +128,6 @@ class Draft:
         self.players.remove(player)
 
 def sortPack(pack):
-    #this is going to be sloppy shit
     monsters = [card for card in pack if 'monster' in card.cardType.lower() and ('synchro' not in card.cardType.lower() and 'xyz' not in card.cardType.lower())]
     spells = [card for card in pack if 'spell' in card.cardType.lower()]
     traps = [card for card in pack if 'trap' in card.cardType.lower()]
