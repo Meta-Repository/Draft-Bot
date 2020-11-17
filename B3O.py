@@ -131,9 +131,14 @@ async def on_message(message):
         return
 
     if '!joindraft' in message.content.lower():
-        #Makes sure there is both a draft in this channel, that draft hasnt started yet, and that the player isnt already in it.
-        #Might want to split that up for serpeate error messages for the user.
-        if message.channel in drafts and drafts[message.channel].currentPack == 0 and message.author not in [player.user for player in drafts[message.channel].players]:
+        #Makes sure there is both a draft in this channel, that draft hasnt started yet, and that the player isnt already in a draft.
+        #Might want to split that up for serpeate error messages for the user. 
+        currentlyPlaying = []
+        for draft in drafts:
+            for player in drafts[draft].players:
+                if not player.user in currentlyPlaying:
+                    currentlyPlaying.append(player.user)
+        if message.channel in drafts and drafts[message.channel].currentPack == 0 and message.author not in currentlyPlaying:
             drafts[message.channel].players.append(Player(message.author, drafts[message.channel]))
             await message.channel.send(message.author.name + ' has joined the draft!')
         else:
@@ -159,6 +164,7 @@ async def on_message(message):
             for key in cubes.keys():
                 if len(message.content.lower().split()) > 1 and key == message.content.lower().split()[1]:
                     drafts[message.channel] = Draft(cubes[key], message.channel)
+                    await message.channel.send('Draft created. Players can now join.')
                     return
             await message.channel.send('Cube not found, please enter one from this list next time:\n' + str(list(cubes.keys())))
             

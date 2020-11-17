@@ -67,10 +67,10 @@ class Draft:
     #players: The players in the draft. Player class.
     #channel: The channel the draft was started from
     #timer: The timer tracking the picks. Reassign every pick.
-    def __init__(self, cube, channel, players = []):
+    def __init__(self, cube, channel):
         self.cube = cube
         self.pool = cube
-        self.players = players
+        self.players = [] #Was orginally a default value. Created very complicated errors with underlying objects and references in the Python interpter. Wasn't being used at the time anyway.
         self.channel = channel
         self.timer = None
         self.currentPick = -1
