@@ -22,10 +22,10 @@ class Player:
                 self.pack.pop(cardIndex)
                 self.draft.checkPacks()
 
-    def __init__(self, user, draft, pack = None, pool=[],):
+    def __init__(self, user, draft):
         self.draft = draft
-        self.pack = pack
-        self.pool = pool
+        self.pack = None
+        self.pool = []
         self.user = user
     
     def __repr__(self):
