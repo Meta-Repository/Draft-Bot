@@ -35,7 +35,7 @@ class Timer:
 
     async def start(self):
         #Scales the legnth of the timer to the size of the pack.
-        self.legnth -= (8 * (self.draft.currentPick - 1))
+        self.legnth -= (9 * (self.draft.currentPick - 1))
         #A little bit of psych here. Tell them there is shorter left to pick than there really is.
         await asyncio.sleep(self.legnth - 12)
         #Return if this thread is now a outdated and no longer needed timer.
@@ -47,13 +47,13 @@ class Timer:
         await asyncio.sleep(12)
         if self != self.draft.timer:
             return
-        for player in self.draft.players:
+        players = self.draft.players[:]
+        for player in players:
             if not player.hasPicked():
                 if self.draft.currentPick == 15:
                     asyncio.create_task(player.user.send('Ran out of time. You have been kicked for missing the final pick in a pack.'))
                     self.draft.kick(player)
                 else:
-                    asyncio.create_task(player.user.send('Ran out of time. Automatically picked the first card in the pack.'))
                     player.pick(0)
 
     def __init__(self, draft, legnth=150):
@@ -126,6 +126,7 @@ class Draft:
         #A little worried about how we currently call this from the seperate timer thread from all the other main logic.
         #Drops the players pack into the void currently. 
         self.players.remove(player)
+        self.checkPacks()
 
 def sortPack(pack):
     monsters = [card for card in pack if 'monster' in card.cardType.lower() and ('synchro' not in card.cardType.lower() and 'xyz' not in card.cardType.lower())]

@@ -252,13 +252,6 @@ async def on_message(message):
         else:           
             await message.channel.send('Only admins or moderators can remove players from the draft. If you yourself would like to leave, use !leavedraft.')
 
-    if message.content.lower().strip().startswith('!reset'):
-        if 'Admin' in str(message.author.roles) or 'Moderator' in str(message.author.roles):
-            drafts = {}
-            import_cubes()
-            await message.channel.send('Bot reset.')
-
-
     if ('!ydk' in message.content.lower()):
         for draft in drafts:
             for player in drafts[draft].players:
