@@ -248,7 +248,7 @@ async def on_message(message):
         if ('Admin' in str(message.author.roles) or 'Moderator' in str(message.author.roles)) and message.channel in drafts: #Only admins/mods can do this command and makes sure there is a draft in this channel
             for player in drafts[message.channel].players:
                 if player.user.name in message.content:
-                    drafts[message.channel].players.remove(player)
+                    drafts[message.channel].kick(player)
         else:           
             await message.channel.send('Only admins or moderators can remove players from the draft. If you yourself would like to leave, use !leavedraft.')
 
