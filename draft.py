@@ -49,8 +49,8 @@ class Timer:
             return
         players = self.draft.players[:]
         for player in players:
-            if not player.hasPicked():
-                if self.draft.currentPick == 15:
+            if not player.hasPicked() and self == self.draft.timer:
+                if self.draft.currentPick == 15 and self.draft.currentPack != 4:
                     asyncio.create_task(player.user.send('Ran out of time. You have been kicked for missing the final pick in a pack.'))
                     self.draft.kick(player)
                 else:

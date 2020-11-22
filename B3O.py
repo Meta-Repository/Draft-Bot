@@ -8,8 +8,13 @@ from draft import Player
 import cardInfo
 from draft import reactions
 
+#Config Loading 
+key = None
+with open('config.json', 'r') as config_file:
+    config_json = json.load(config_file)
+    key = config_json['key']
+
 #Constants:
-BotToken = "NzA3MzI0NjAxNDQ4NzkyMDY0.XrHJbw.mwn0yBiFMXRTBs2W93ePyWwcW64"
 client = discord.Client()
 
 #technically there's a LAUGH attribute too, but we don't fux with that
@@ -311,4 +316,7 @@ async def on_ready():
             f'{guild.name}(id: {guild.id})'
         )
 
-client.run(BotToken)
+if not key is None:
+    client.run(key)
+else:
+    print('Key not configured.')
