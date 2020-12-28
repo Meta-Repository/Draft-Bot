@@ -2,6 +2,7 @@ import asyncio
 import random
 import discord
 import imagemanipulator
+import math
 
 #Constants
 reactions = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '0️⃣', '🇦', '🇧','🇨','🇩','🇪']
@@ -35,7 +36,12 @@ class Timer:
 
     async def start(self):
         #Scales the legnth of the timer to the size of the pack.
-        self.legnth -= (9 * (self.draft.currentPick - 1))
+        #Mathematica:
+        #In: NSolve[{a*Log[10, b*5] == 150, a*Log[10, b*19] == 30}, {a, b}]
+        #Out: {{a -> -206.974, b -> 0.0376965}}
+        #Pick + 4
+        newLegnth = -206.974*math.log10(0.0376965*(self.draft.currentPick + 4))
+        self.legnth = round(newLegnth)
         #A little bit of psych here. Tell them there is shorter left to pick than there really is.
         await asyncio.sleep(self.legnth - 12)
         #Return if this thread is now a outdated and no longer needed timer.
@@ -47,13 +53,14 @@ class Timer:
         await asyncio.sleep(12)
         if self != self.draft.timer:
             return
-        players = self.draft.players[:]
+        players = [player for player in self.draft.players if not player.hasPicked()]
         for player in players:
             if not player.hasPicked() and self == self.draft.timer:
                 if self.draft.currentPick == 15 and self.draft.currentPack != 4:
                     asyncio.create_task(player.user.send('Ran out of time. You have been kicked for missing the final pick in a pack.'))
                     self.draft.kick(player)
                 else:
+                    asyncio.create_task(player.user.send('Ran out of time. You have automatically picked the first card in the pack.'))
                     player.pick(0)
 
     def __init__(self, draft, legnth=150):
@@ -68,8 +75,8 @@ class Draft:
     #channel: The channel the draft was started from
     #timer: The timer tracking the picks. Reassign every pick.
     def __init__(self, cube, channel):
-        self.cube = cube
-        self.pool = cube
+        self.cube = cube[:]
+        self.pool = cube[:]
         self.players = [] #Was orginally a default value. Created very complicated errors with underlying objects and references in the Python interpter. Wasn't being used at the time anyway.
         self.channel = channel
         self.timer = None
@@ -115,7 +122,7 @@ class Draft:
                 self.rotatePacks()
             elif self.currentPack >= 4:
                 for player in self.players:
-                    player.user.send('The draft is now finished. Use !ydk or !mypool to get started on deckbuilding. Your draft organizer should be posting a bracket soon.')
+                    asyncio.create_task(player.user.send('The draft is now finished. Use !ydk or !mypool to get started on deckbuilding. Your draft organizer should be posting a bracket soon.'))
             else:
                 self.newPacks()
     

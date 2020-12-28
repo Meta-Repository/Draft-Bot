@@ -124,6 +124,7 @@ async def on_reaction_add(reaction, user):
                     #100 used as a value thats larger than anything we use, so pick will ignore it.
                     cardIndex = reactions.index(str(reaction)) if str(reaction) in reactions else 100
                     player.pick(cardIndex)
+                    return
 
 #Responds in chat to messages. 
 @client.event
@@ -147,14 +148,14 @@ async def on_message(message):
             drafts[message.channel].players.append(Player(message.author, drafts[message.channel]))
             await message.channel.send(message.author.name + ' has joined the draft!')
         else:
-           await message.channel.send("The draft has not been reset since it was last fired. Please join after it gets reset.")
+           await message.channel.send("The draft is already running or you are already in another draft. Try !leavedraft in the channel where you previously drafted.")
 
     #de-registers a player
     if ('!leavedraft') in message.content.lower():
         if message.channel in drafts:
             for player in drafts[message.channel].players:
                 if message.author == player.user:
-                    drafts[message.channel].players.remove(player)
+                    drafts[message.channel].kick(player)
                     await message.channel.send('So sorry to see you leave, ' + message.author.name + '. Catch you for the next one!')
 
     #Sends the name of all registered players.
@@ -254,6 +255,7 @@ async def on_message(message):
             for player in drafts[message.channel].players:
                 if player.user.name in message.content:
                     drafts[message.channel].kick(player)
+                    await message.channel.send('That player has been removed from the draft.')
         else:           
             await message.channel.send('Only admins or moderators can remove players from the draft. If you yourself would like to leave, use !leavedraft.')
 
@@ -316,7 +318,7 @@ async def on_ready():
             f'{guild.name}(id: {guild.id})'
         )
 
-if not key is None:
+if not key is None and key != '':
     client.run(key)
 else:
     print('Key not configured.')
