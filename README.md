@@ -10,4 +10,7 @@ Run the cubemaker.py script passing allcards.json as the first argument and your
 * Once the script has executed, you should have a shiny new .cub file in the directory called list.cub. If any cards could not be found, they will be output in a one card per line list as missed_cards.txt. You'll wanna run the whole thing again once you figure out the spelling/formatting issues of these cards.
 
 ## Step 2
+Add a discord bot api token to the config.json file. This can be obtained through the discord developer portal. 
+
+## Step 3
 Run B30.py. All cubes should be in the cubes/ directory. 
