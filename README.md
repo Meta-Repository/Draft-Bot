@@ -14,3 +14,9 @@ Add a discord bot api token to the config.json file. This can be obtained throug
 
 ## Step 3
 Run B30.py. All cubes should be in the cubes/ directory. 
+
+## TODO:
+* Make a better system for the pick timer.
+* Add a message when a player is kicked.
+* Make !leavedraft work from any channel.
+* Automatically kick players from a draft after a certain amount of time has past after pack 4 pick 15.
