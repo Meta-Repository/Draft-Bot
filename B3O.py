@@ -166,7 +166,7 @@ async def on_message(message):
             await message.channel.send('There is no draft in this channel currently.')
 
     if ('!!createdraft') in message.content.lower():
-        if 'Admin' in str(message.author.roles) or 'Moderator' in str(message.author.roles): #Only admins/mods can do this command
+        if 'Admin' in str(message.author.roles) or 'Moderator' in str(message.author.roles) or 'Host' in str(message.author.roles): #Only admins, mods or draft hosts can do this command
             for key in cubes.keys():
                 if len(message.content.lower().split()) > 1 and key == message.content.lower().split()[1]:
                     drafts[message.channel] = Draft(cubes[key], message.channel)
@@ -175,7 +175,7 @@ async def on_message(message):
             await message.channel.send('Cube not found, please enter one from this list next time:\n' + str(list(cubes.keys())))
             
     if ('!!startdraft') in message.content.lower():
-        if 'Admin' in str(message.author.roles) or 'Moderator' in str(message.author.roles): #Only admins/mods can do this command
+        if 'Admin' in str(message.author.roles) or 'Moderator' in str(message.author.roles)or 'Host' in str(message.author.roles): #Only admins, mods or draft hosts can do this command
             #Confirms there is a unstarted draft in the channel.
             if message.channel in drafts and drafts[message.channel].currentPack == 0:
                 await message.channel.send('The draft is starting! All players have received their first pack. Good luck!')
@@ -251,7 +251,7 @@ async def on_message(message):
     
     #Removes people from the draft. Does not use @. For example, !remove fspluver, not !remove @fspluver
     if message.content.lower().strip().startswith('!remove'):
-        if ('Admin' in str(message.author.roles) or 'Moderator' in str(message.author.roles)) and message.channel in drafts: #Only admins/mods can do this command and makes sure there is a draft in this channel
+        if ('Admin' in str(message.author.roles) or 'Moderator' in str(message.author.roles) or 'Host' in str(message.author.roles)) and message.channel in drafts: #Only admins, mods or draft hosts can do this command and makes sure there is a draft in this channel
             for player in drafts[message.channel].players:
                 if player.user.name in message.content:
                     drafts[message.channel].kick(player)
@@ -298,7 +298,7 @@ async def on_message(message):
                     asyncio.create_task(message.author.send(file=discord.File(fp=StringIO(ydkString),filename="YourDraftPool.ydk")))
 
     if ('!draftdone') in message.content.lower():
-        if 'Admin' in str(message.author.roles) or 'Moderator' in str(message.author.roles): #Only admins/mods can do this command
+        if 'Admin' in str(message.author.roles) or 'Moderator' in str(message.author.roles) or 'Host' in str(message.author.roles): #Only admins, mods or draft hosts can do this command
             await message.channel.send('The draft has concluded! Type "!mypool" to see your cardpool, and !ydk to get an export of your list. Good luck in your duels!')
 
     #TODO: Low priority. Fix this later.
