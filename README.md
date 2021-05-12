@@ -10,4 +10,13 @@ Run the cubemaker.py script passing allcards.json as the first argument and your
 * Once the script has executed, you should have a shiny new .cub file in the directory called list.cub. If any cards could not be found, they will be output in a one card per line list as missed_cards.txt. You'll wanna run the whole thing again once you figure out the spelling/formatting issues of these cards.
 
 ## Step 2
-Run B30.py. If list.cub is in the directory, the bot picks it up and uses it as its list of cards. That's it. You're good to go.
+Add a discord bot api token to the config.json file. This can be obtained through the discord developer portal. 
+
+## Step 3
+Run B30.py. All cubes should be in the cubes/ directory. 
+
+## TODO:
+* Make a better system for the pick timer.
+* Add a message when a player is kicked.
+* Make !leavedraft work from any channel.
+* Automatically kick players from a draft after a certain amount of time has past after pack 4 pick 15.

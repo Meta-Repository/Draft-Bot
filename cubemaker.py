@@ -51,7 +51,6 @@ for name in cubeList:
         elif len(nameComponents) == 1:
             imageUrl = matchedCard['card_images'][0]['image_url']
             cardId = matchedCard['id']
-        #someone fucked up
         else:
             print('Could not find card ' + name.strip() + '. Malformatted input line.')
             unidentifiedCards.append("Malformatted line => " + name)
@@ -65,7 +64,6 @@ for name in cubeList:
         #add the card to the list of things we're gonna export
         cubeCards.append(matchedCard)
 
-#if there are four lines in script that scream "I'm not sure how Python works, and do not care to find out.", these are it.
 if(path.exists("list.cub")):
     os.remove('list.cub')
 if(path.exists("missed_cards.txt")):
