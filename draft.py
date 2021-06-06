@@ -7,6 +7,9 @@ import math
 #Constants
 reactions = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '0️⃣', '🇦', '🇧','🇨','🇩','🇪']
 
+#Starting with a list that will hold pick data
+pickdata = [['Name', 'Pick', 'User', 'Cube']]
+
 #Stores their pool of picked cards and discord user. Store within drafts.
 class Player:
 
@@ -20,8 +23,20 @@ class Player:
             if not self.hasPicked():
                 asyncio.create_task(self.user.send('You have picked ' + self.pack[cardIndex].name + '.'))
                 self.pool.append(self.pack[cardIndex])
+                
+                temppickdata = []
+                tempcardname = str(self.pack[cardIndex].name) #Adding the card name to the temppickdata vector to append to file
+
                 self.pack.pop(cardIndex)
                 self.draft.checkPacks()
+
+                tempcardname = tempcardname.replace(',', " ") #Removing commas for CSV purposes
+                temppickdata.append(tempcardname)
+                temppickdata.append(len(self.pack)) #Adding pick #
+                temppickdata.append(self.user) #Adding the person who picked
+                temppickdata.append('x') #Noting which cube was used. Will add once I get this working
+                pickdata.append(temppickdata)
+                
 
     def __init__(self, user, draft):
         self.draft = draft

@@ -2,9 +2,11 @@ import discord
 import asyncio
 import json
 import os
+import csv
 from io import StringIO
 from draft import Draft
 from draft import Player
+from draft import pickdata
 import cardInfo
 from draft import reactions
 
@@ -29,6 +31,7 @@ cardTypes = ['Normal Monster', 'Gemini Monster', 'Effect Monster', 'Tuner Monste
 
 drafts = {}
 cubes = {}
+messagestring = "x"
 
 #import code. Short and sweet.
 def import_cubes():
@@ -132,6 +135,8 @@ async def on_message(message):
     global drafts
     global cubes
 
+    global messagestring
+
     #Ignores the bots own messages.
     if message.author == client.user:
         return
@@ -171,6 +176,7 @@ async def on_message(message):
                 if len(message.content.lower().split()) > 1 and key == message.content.lower().split()[1]:
                     drafts[message.channel] = Draft(cubes[key], message.channel)
                     await message.channel.send('Draft created. Players can now join.')
+                    messagestring = message.content.lower()
                     return
             await message.channel.send('Cube not found, please enter one from this list next time:\n' + str(list(cubes.keys())))
             
@@ -258,6 +264,16 @@ async def on_message(message):
                     await message.channel.send('That player has been removed from the draft.')
         else:           
             await message.channel.send('Only admins or moderators can remove players from the draft. If you yourself would like to leave, use !leavedraft.')
+
+    if ('!grabdata' in message.content.lower()):
+        pickdata.append(messagestring)
+        file = open('pick_data_file.csv', 'w+', newline = '')
+        with file:
+            write = csv.writer(file)
+            write.writerows(pickdata)
+            
+        asyncio.create_task(message.author.send(file=discord.File(r'pick_data_file.csv')))
+
 
     if ('!ydk' in message.content.lower()):
         for draft in drafts:
