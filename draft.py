@@ -10,6 +10,7 @@ reactions = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '
 #Starting with a list that will hold pick data
 pickdata = [['Name', 'Pick', 'User', 'Cube']]
 
+timerlist = [0]*100
 #Stores their pool of picked cards and discord user. Store within drafts.
 class Player:
 
@@ -69,11 +70,21 @@ class Timer:
         if self != self.draft.timer:
             return
         players = [player for player in self.draft.players if not player.hasPicked()]
+        #timerlist = [0]*len(players)
         for player in players:
+            print(timerlist)
             if not player.hasPicked() and self == self.draft.timer:
-                if self.draft.currentPick == 15 and self.draft.currentPack != 4:
-                    asyncio.create_task(player.user.send('Ran out of time. You have been kicked for missing the final pick in a pack.'))
+                timerlist[players.index(player)] = timerlist[players.index(player)] + 1
+                print("gap")
+                print(timerlist)
+                print(timerlist[players.index(player)])
+                if timerlist[players.index(player)] == 3:
+                    asyncio.create_task(player.user.send('Ran out of time. You have been kicked for missing 3 picks. Three strikes! you\'re out! https://tenor.com/view/strike-ponche-bateador-strike-out-swing-gif-15388719'))
                     self.draft.kick(player)
+
+                #if self.draft.currentPick == 15 and self.draft.currentPack != 4:
+                 #   asyncio.create_task(player.user.send('Ran out of time. You have been kicked for missing the final pick in a pack.'))
+                  #  self.draft.kick(player)
                 else:
                     asyncio.create_task(player.user.send('Ran out of time. You have automatically picked the first card in the pack.'))
                     player.pick(0)
