@@ -10,7 +10,6 @@ reactions = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '
 #Starting with a list that will hold pick data
 pickdata = [['Name', 'Pick', 'User', 'Cube']]
 
-timerlist = [0]*100
 #Stores their pool of picked cards and discord user. Store within drafts.
 class Player:
 
@@ -43,6 +42,7 @@ class Player:
         self.draft = draft
         self.pack = None
         self.pool = []
+        self.missedpicks = 0
         self.user = user
     
     def __repr__(self):
@@ -70,23 +70,17 @@ class Timer:
         if self != self.draft.timer:
             return
         players = [player for player in self.draft.players if not player.hasPicked()]
-        #timerlist = [0]*len(players)
         for player in players:
-            print(timerlist)
             if not player.hasPicked() and self == self.draft.timer:
-                timerlist[players.index(player)] = timerlist[players.index(player)] + 1
-                print("gap")
-                print(timerlist)
-                print(timerlist[players.index(player)])
-                if timerlist[players.index(player)] == 3:
+                player.missedpicks = player.missedpicks + 1
+                if player.missedpicks == 2:
+                    asyncio.create_task(player.user.send('Ran out of time. WARNING! IF YOU MISS ONE MORE PICK YOU WILL BE KICKED FROM THE DRAFT! WARNING! IF YOU MISS ONE MORE PICK YOU WILL BE KICKED FROM THE DRAFT! WARNING! IF YOU MISS ONE MORE PICK YOU WILL BE KICKED FROM THE DRAFT! https://tenor.com/view/wandavision-wanda-this-will-be-warning-gif-20683220'))
+                if player.missedpicks == 3:
                     asyncio.create_task(player.user.send('Ran out of time. You have been kicked for missing 3 picks. Three strikes! you\'re out! https://tenor.com/view/strike-ponche-bateador-strike-out-swing-gif-15388719'))
                     self.draft.kick(player)
 
-                #if self.draft.currentPick == 15 and self.draft.currentPack != 4:
-                 #   asyncio.create_task(player.user.send('Ran out of time. You have been kicked for missing the final pick in a pack.'))
-                  #  self.draft.kick(player)
                 else:
-                    asyncio.create_task(player.user.send('Ran out of time. You have automatically picked the first card in the pack.'))
+                    asyncio.create_task(player.user.send('Ran out of time. You have automatically picked the first card in the pack. Please pay attention to avoid wasting time!'))
                     player.pick(0)
 
     def __init__(self, draft, legnth=150):
