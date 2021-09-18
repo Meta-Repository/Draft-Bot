@@ -10,7 +10,7 @@ Run the cubemaker.py script passing allcards.json as the first argument and your
 * Once the script has executed, you should have a shiny new .cub file in the directory called list.cub. If any cards could not be found, they will be output in a one card per line list as missed_cards.txt. You'll wanna run the whole thing again once you figure out the spelling/formatting issues of these cards.
 
 ## Step 2
-Create a config.json file with the following content:
+Create a config.json file with the following content:  
 {  
    "key":"Your-Token-Here"  
 {  
