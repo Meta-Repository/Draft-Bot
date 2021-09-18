@@ -11,9 +11,9 @@ Run the cubemaker.py script passing allcards.json as the first argument and your
 
 ## Step 2
 Create a config.json file with the following content:
-{
-   "key":"Your-Token-Here"
-{
+{  
+   "key":"Your-Token-Here"  
+{  
  
 Add a discord bot api token to the newly created config.json file (replace the "Your-Token-Here" text). The token can be obtained through the discord developer portal. If you are new to Discord bots in Python, it might be helpful to review the content at think link: https://realpython.com/how-to-make-a-discord-bot-python/
 
