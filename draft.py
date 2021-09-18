@@ -78,6 +78,7 @@ class Timer:
                 if player.missedpicks == 3:
                     asyncio.create_task(player.user.send('Ran out of time. You have been kicked for missing 3 picks. Three strikes! you\'re out! https://tenor.com/view/strike-ponche-bateador-strike-out-swing-gif-15388719'))
                     self.draft.kick(player)
+                    
 
                 else:
                     asyncio.create_task(player.user.send('Ran out of time. You have automatically picked the first card in the pack. Please pay attention to avoid wasting time!'))
@@ -154,6 +155,7 @@ class Draft:
         #Drops the players pack into the void currently. 
         self.players.remove(player)
         self.checkPacks()
+        asyncio.create_task(self.channel.send("A player has been kicked from the draft"))
 
 def sortPack(pack):
     monsters = [card for card in pack if 'monster' in card.cardType.lower() and ('synchro' not in card.cardType.lower() and 'xyz' not in card.cardType.lower())]
