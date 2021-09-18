@@ -141,6 +141,9 @@ async def on_message(message):
     if message.author == client.user:
         return
 
+    if '!commands' in message.content.lower():
+        await message.channel.send("Commands for all users: \n !joindraft: Signs up for an open draft \n !leavedraft: De-registers the player \n !currentplayers: Lists the players currently registered for a draft \n !mypool: Lists the contents of the players draft pool \n !ydk: Exports the users card pool as a YDK file \n \n Commands that require the Host, Moderator, or Admin role: \n !!createdraft: Creates a draft that players can register for. Requires the name of the cube (eg list.cub) \n !!startdraft: Begins the draft - B3O will send packs to registered players \n ")
+
     if '!joindraft' in message.content.lower():
         #Makes sure there is both a draft in this channel, that draft hasnt started yet, and that the player isnt already in a draft.
         #Might want to split that up for serpeate error messages for the user. 
