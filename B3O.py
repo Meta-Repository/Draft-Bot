@@ -114,11 +114,16 @@ async def on_member_join(member):
     )
 
 @client.event
-async def on_reaction_add(reaction, user):
+async def on_raw_reaction_add(payload):
     global drafts
+    global client
+
+    channel = await client.fetch_channel(payload.channel_id)
+    user = await client.fetch_user(payload.user_id)
+    reaction = payload.emoji
 
     #checks to make sure there are packs, this is a DM, and the player is in the draft
-    if not "DMChannel" in str(type(reaction.message.channel)):
+    if not "DMChannel" in str(type(channel)):
         return    
 
     for draft in drafts:
