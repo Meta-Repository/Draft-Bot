@@ -9,6 +9,7 @@ from draft import Player
 from draft import pickdata
 import cardInfo
 from draft import reactions
+from aiocache import cached
 
 #Config Loading 
 key = None
@@ -113,18 +114,27 @@ async def on_member_join(member):
         f'Hi {member.name}, welcome to my Discord server!'
     )
 
+@cached(ttl=60 * 5)
+async def get_user_from_id(id):
+    return await client.fetch_user(id)
+
+@cached(ttl=60 * 5)
+async def get_channel_from_id(id):
+    return await client.fetch_channel(id)
+
+
 @client.event
 async def on_raw_reaction_add(payload):
     global drafts
     global client
 
-    channel = await client.fetch_channel(payload.channel_id)
-    user = await client.fetch_user(payload.user_id)
-    reaction = payload.emoji
-
+    channel = await get_channel_from_id(payload.channel_id)
     #checks to make sure there are packs, this is a DM, and the player is in the draft
     if not "DMChannel" in str(type(channel)):
-        return    
+        return
+
+    user = await get_user_from_id(payload.user_id)
+    reaction = payload.emoji
 
     for draft in drafts:
         for player in drafts[draft].players:
